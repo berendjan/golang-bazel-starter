@@ -1,0 +1,12 @@
+load("@gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix github.com/berendjan/golang-bazel-starter
+# gazelle:resolve proto proto google/api/annotations.proto @googleapis//google/api:annotations_proto
+# gazelle:resolve proto go google/api/annotations.proto @googleapis//google/api:annotations_go_proto
+# gazelle:go_grpc_compilers @rules_go//proto:go_grpc_v2
+# gazelle:map_kind proto_library proto_library @protobuf//bazel:proto_library.bzl
+# gazelle:proto_strip_import_prefix /proto
+
+gazelle(
+    name = "gazelle",
+)

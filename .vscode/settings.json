@@ -1,0 +1,10 @@
+{
+    "go.toolsEnvVars": {
+        "GOPACKAGESDRIVER": "${workspaceFolder}/tools/gopackagesdriver.sh"
+    },
+    "protoc": {
+        "options": [
+            "--proto_path=${workspaceRoot}/proto"
+        ]
+    },
+}
