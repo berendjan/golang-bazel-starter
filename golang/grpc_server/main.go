@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -13,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	configpb "github.com/berendjanlange/golang-bazel-starter/proto/configuration_service/v1"
+	configpb "github.com/berendjan/golang-bazel-starter/proto/configuration_service/v1"
 )
 
 var (
