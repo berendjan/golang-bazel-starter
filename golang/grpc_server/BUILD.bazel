@@ -4,23 +4,14 @@ load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "grpc_server_lib",
-    srcs = [
-        "main.go",
-        "server.go",
-    ],
+    srcs = ["main.go"],
     importpath = "github.com/berendjan/golang-bazel-starter/golang/grpc_server",
     visibility = ["//visibility:private"],
     deps = [
-        "//proto/common/v1:common",
-        "//proto/configuration/v1:configuration",
-        "//proto/configuration_service/v1:gateway",
-        "@grpc_ecosystem_grpc_gateway//runtime",
-        "@org_golang_google_grpc//:grpc",
-        "@org_golang_google_grpc//codes",
+        "//golang/config/db",
+        "//golang/config/server",
+        "//golang/framework/server_builder",
         "@org_golang_google_grpc//reflection",
-        "@org_golang_google_grpc//status",
-        "@org_golang_x_net//http2",
-        "@org_golang_x_net//http2/h2c",
     ],
 )
 

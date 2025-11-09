@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "test",
+    srcs = ["postgres_container.go"],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/test",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//golang/framework/db",
+        "@com_github_jackc_pgx_v5//pgxpool",
+        "@com_github_testcontainers_testcontainers_go//:testcontainers-go",
+        "@com_github_testcontainers_testcontainers_go//wait",
+    ],
+)
+
+go_test(
+    name = "test_test",
+    srcs = ["postgres_container_test.go"],
+    embed = [":test"],
+)

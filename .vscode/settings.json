@@ -2,9 +2,25 @@
     "go.toolsEnvVars": {
         "GOPACKAGESDRIVER": "${workspaceFolder}/tools/gopackagesdriver.sh"
     },
+    "gopls": {
+        "build.workspaceFiles": [
+            "**/BUILD",
+            "**/WORKSPACE",
+            "**/*.{bzl,bazel}",
+        ],
+        "build.directoryFilters": [
+            "-bazel-bin",
+            "-bazel-out",
+            "-bazel-testlogs",
+            "-bazel-${workspaceFolderBasename}"
+        ],
+    },
     "protoc": {
         "options": [
             "--proto_path=${workspaceRoot}/proto"
         ]
+    },
+    "[proto3]": {
+        "editor.formatOnSave": false
     },
 }

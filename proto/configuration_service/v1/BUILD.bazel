@@ -1,4 +1,4 @@
-### GENERATED FILE ### DO NOT EDIT ###
+### PARTIALLY GENERATED FILE ### DO NOT EDIT ###
 
 load("@protobuf//bazel:proto_library.bzl", "proto_library")
 load("@rules_go//go:def.bzl", "go_library")
@@ -36,6 +36,8 @@ go_library(
     importpath = "github.com/berendjan/golang-bazel-starter/proto/configuration_service/v1",
     visibility = ["//visibility:public"],
 )
+
+### NON-GENERATED TARGETS ###
 
 # has to be named 'gateway' to match the gazelle resolve_regexp directive
 gateway_grpc_library(

@@ -1,0 +1,37 @@
+# Bazel configuration for consistent builds and better caching
+
+# Use a disk cache to persist build artifacts
+build --disk_cache=~/.cache/bazel-disk
+
+# Repository cache for external dependencies
+build --repository_cache=~/.cache/bazel-repo
+
+# Strict action environment for reproducible builds
+# This ensures builds are less affected by environment variable differences
+build --incompatible_strict_action_env
+
+# Keep the Bazel server running longer to avoid restarts
+startup --max_idle_secs=10800
+
+# Show timing information for builds
+build --show_timestamps
+
+# Enable persistent workers for faster repeated builds
+build --worker_sandboxing
+
+# Show progress for longer operations
+build --show_progress_rate_limit=0.5
+
+# Optimize for local development
+build --local_resources=cpu=HOST_CPUS-1
+
+# Color output
+build --color=yes
+
+# Test output configuration
+test --test_output=errors
+test --test_summary=detailed
+
+# Remote cache configuration (uncomment if using remote cache)
+# build --remote_cache=grpc://localhost:9092
+# build --remote_upload_local_results=true

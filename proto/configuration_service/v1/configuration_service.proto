@@ -18,24 +18,16 @@ service Configuration {
   };
 
   rpc DeleteAccount(configuration.v1.AccountDeletionRequestProto)
-      returns (common.v1.StatusResponseProto);
+      returns (common.v1.StatusResponseProto) {
+    option (google.api.http) = {
+      delete : "/v1/accounts/{id}"
+    };
+  };
 
-  rpc RequestToJoinGroup(configuration.v1.RequestToJoinGroupProto)
-      returns (common.v1.StatusResponseProto);
-
-  rpc ListConfigurationEvents(
-      configuration.v1.ListConfigurationEventsRequestProto)
-      returns (configuration.v1.ListConfigurationEventsResponseProto);
-
-  rpc AcceptRequestToJoinGroup(configuration.v1.AcceptRequestToJoinGroupProto)
-      returns (common.v1.StatusResponseProto);
-
-  rpc DenyRequestToJoinGroup(configuration.v1.DenyRequestToJoinGroupProto)
-      returns (common.v1.StatusResponseProto);
-
-  rpc ListGroups(configuration.v1.ListGroupsRequestProto)
-      returns (configuration.v1.ListGroupsResponseProto);
-
-  rpc DeleteMember(configuration.v1.MemberDeletionRequestProto)
-      returns (common.v1.StatusResponseProto);
+  rpc ListAccounts(configuration.v1.ListAccountsRequestProto)
+      returns (configuration.v1.ListAccountsResponseProto) {
+    option (google.api.http) = {
+      get : "/v1/accounts"
+    };
+  };
 }

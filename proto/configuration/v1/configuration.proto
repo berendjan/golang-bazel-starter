@@ -12,7 +12,11 @@ message AccountConfigurationProto {
 
 message AccountCreationRequestProto { string name = 1; }
 
-message AccountDeletionRequestProto {}
+message AccountDeletionRequestProto { string id = 1;}
+
+message ListAccountsRequestProto {}
+
+message ListAccountsResponseProto { repeated AccountConfigurationProto accounts = 1; }
 
 // User sends invitation to another user with inviter_id, group_id, invite_id
 

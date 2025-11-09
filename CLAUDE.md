@@ -1,6 +1,7 @@
 # Golang-bazel-starter
 
-When changing dependencies in go code do the following
+When changing dependencies in go code do the following:
+After adding a new golang library:
 
 ```bash
 # update go.mod
@@ -14,4 +15,11 @@ bazel run //:gazelle
 
 # build target with bazel
 ```
+
+Do not manually update BUILD.bazel files, always do
+```bash
+bazel run //:gazelle
+```
+
+
 

@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "db",
+    srcs = [
+        "migrate.go",
+        "postgres.go",
+    ],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/framework/db",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_golang_migrate_migrate_v4//:migrate",
+        "@com_github_golang_migrate_migrate_v4//database/postgres",
+        "@com_github_golang_migrate_migrate_v4//source/iofs",
+        "@com_github_jackc_pgx_v5//pgxpool",
+    ],
+)

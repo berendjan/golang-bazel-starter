@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "server",
+    srcs = ["server.go"],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/config/server",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//golang/config/repository",
+        "//proto/common/v1:common",
+        "//proto/configuration/v1:configuration",
+        "//proto/configuration_service/v1:gateway",
+        "@grpc_ecosystem_grpc_gateway//runtime",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
