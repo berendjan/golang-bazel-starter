@@ -11,12 +11,12 @@ import (
 
 	commonpb "github.com/berendjan/golang-bazel-starter/proto/common/v1"
 	configpb "github.com/berendjan/golang-bazel-starter/proto/configuration/v1"
-	configservicepb "github.com/berendjan/golang-bazel-starter/proto/configuration_service/v1"
+	gw "github.com/berendjan/golang-bazel-starter/proto/configuration_service/v1/gateway"
 )
 
 // ConfigurationServer implements the Configuration gRPC service
 type ConfigurationServer struct {
-	configservicepb.UnimplementedConfigurationServer
+	gw.UnimplementedConfigurationServer
 
 	// In-memory storage (replace with actual database in production)
 	mu                  sync.RWMutex

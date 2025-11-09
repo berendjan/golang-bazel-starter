@@ -4,12 +4,18 @@ package configuration_service.v1;
 
 import "configuration/v1/configuration.proto";
 import "common/v1/common.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/berendjan/golang-bazel-starter/proto/configuration_service/v1;configurationservicev1";
 
 service Configuration {
   rpc CreateAccount(configuration.v1.AccountCreationRequestProto)
-      returns (configuration.v1.AccountConfigurationProto);
+      returns (configuration.v1.AccountConfigurationProto) {
+    option (google.api.http) = {
+      post : "/v1/accounts"
+      body : "*"
+    };
+  };
 
   rpc DeleteAccount(configuration.v1.AccountDeletionRequestProto)
       returns (common.v1.StatusResponseProto);

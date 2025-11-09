@@ -1,3 +1,5 @@
+### GENERATED FILE ### DO NOT EDIT ###
+
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
@@ -11,11 +13,14 @@ go_library(
     deps = [
         "//proto/common/v1:common",
         "//proto/configuration/v1:configuration",
-        "//proto/configuration_service/v1:configuration_service",
+        "//proto/configuration_service/v1:gateway",
+        "@grpc_ecosystem_grpc_gateway//runtime",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//reflection",
         "@org_golang_google_grpc//status",
+        "@org_golang_x_net//http2",
+        "@org_golang_x_net//http2/h2c",
     ],
 )
 
