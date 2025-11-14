@@ -38,13 +38,14 @@ func NewAccountRepository(pool *db.DBPool) *AccountDbRepository {
 // CreateAccount creates a new account and returns the account configuration
 func (r *AccountDbRepository) CreateAccount(ctx context.Context, accountID []byte, accountType uint32) (*configpb.AccountConfigurationProto, error) {
 	query := `
-		INSERT INTO accounts (id, type, created_at, updated_at)
-		VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-		RETURNING created_at, updated_at
+		INSERT INTO accounts (id, type)
+		VALUES ($1, $2)
+		RETURNING id, type
 	`
 
-	var createdAt, updatedAt string
-	err := r.pool.QueryRow(ctx, query, accountID, accountType).Scan(&createdAt, &updatedAt)
+	var id []byte
+	var accType uint32
+	err := r.pool.QueryRow(ctx, query, accountID, accountType).Scan(&id, &accType)
 	if err != nil {
 		log.Printf("Failed to create account in database: %v", err)
 		return nil, fmt.Errorf("failed to create account: %w", err)
@@ -52,8 +53,8 @@ func (r *AccountDbRepository) CreateAccount(ctx context.Context, accountID []byt
 
 	account := &configpb.AccountConfigurationProto{
 		AccountId: &commonpb.ConfigurationIdProto{
-			Id:   accountID,
-			Type: accountType,
+			Id:   id,
+			Type: accType,
 		},
 	}
 

@@ -89,7 +89,6 @@ type TestDBContext struct {
 type TestServerContext struct {
 	grpcPort   int
 	httpPort   int
-	baseURL    string
 	server     *serverbase.ServerBase
 	serverDone chan struct{}
 }
@@ -141,117 +140,6 @@ func (b *TestContextBuilder) WithDatabase(databaseConfig DatabaseConfig) *TestCo
 func (b *TestContextBuilder) WithServer(serverConfig ServerConfig) *TestContextBuilder {
 	b.servers = append(b.servers, serverConfig)
 	return b
-}
-
-// CleanUp tears down the test context, dropping all test databases and shutting down servers
-// Note: This does NOT terminate the shared container, which is reused across tests
-func (tc *TestContext) CleanUp(ctx context.Context) error {
-	// Shutdown all servers
-	for name, srv := range tc.servers {
-		if srv != nil {
-			srv.Shutdown()
-			log.Printf("Shut down test server: %s", name)
-		}
-	}
-
-	// Close all database clients
-	for _, db := range tc.databases {
-		if db.client != nil {
-			db.client.Close()
-			log.Printf("Closed database client: %s", db.dbName)
-		}
-	}
-
-	// Delete database entries and drop databases
-	if tc.postgresClient != nil {
-		for _, db := range tc.databases {
-
-			// Delete from test_databases table
-			_, err := tc.postgresClient.Exec(ctx,
-				"DELETE FROM test_databases WHERE dbname = $1",
-				db.dbName,
-			)
-			if err != nil {
-				log.Printf("Warning: failed to delete db_name %s from test_databases table: %v", db.dbName, err)
-			}
-
-			// Drop the test database (best effort - may fail if connections still open)
-			dropQuery := fmt.Sprintf("DROP DATABASE IF EXISTS %s", db.dbName)
-			_, err = tc.postgresClient.Exec(ctx, dropQuery)
-			if err != nil {
-				log.Printf("Warning: failed to drop test database %s: %v", db.dbName, err)
-			} else {
-				log.Printf("Dropped test database: %s", db.dbName)
-			}
-		}
-
-		// Close test client
-		tc.postgresClient.Close()
-		tc.postgresClient = nil
-	}
-
-	// DO NOT terminate the container - it's shared across all tests and reused
-	// The container will be cleaned up when the test process exits
-
-	return nil
-}
-
-// getOrCreateContainer returns the singleton container, creating it if necessary
-func getOrCreateContainer(ctx context.Context) (testcontainers.Container, string, int, error) {
-	sharedContainerOnce.Do(func() {
-		log.Println("=== Initializing shared PostgreSQL test container (this should only happen ONCE) ===")
-
-		req := testcontainers.ContainerRequest{
-			Image:        "postgres:17",
-			ExposedPorts: []string{"5432/tcp"},
-			Env: map[string]string{
-				"POSTGRES_USER":     "postgres",
-				"POSTGRES_PASSWORD": "postgres",
-				"POSTGRES_DB":       "postgres",
-			},
-			WaitingFor: wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(60 * time.Second),
-			Name: "test_postgres",
-			HostConfigModifier: (func(hc *container.HostConfig) {
-				hc.AutoRemove = false
-			}),
-		}
-
-		pgContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-			Reuse:            true,
-		})
-		if err != nil {
-			sharedContainerErr = fmt.Errorf("failed to start container: %w", err)
-			return
-		}
-
-		host, err := pgContainer.Host(ctx)
-		if err != nil {
-			sharedContainerErr = fmt.Errorf("failed to get container host: %w", err)
-			return
-		}
-
-		port, err := pgContainer.MappedPort(ctx, "5432")
-		if err != nil {
-			sharedContainerErr = fmt.Errorf("failed to get container port: %w", err)
-			return
-		}
-
-		sharedContainer = pgContainer
-		sharedContainerHost = host
-		sharedContainerPort = mustParsePort(port.Port())
-
-		log.Printf("=== Shared PostgreSQL test container ready at %s:%s ===", host, port.Port())
-	})
-
-	if sharedContainerErr != nil {
-		return nil, "", 0, sharedContainerErr
-	}
-
-	return sharedContainer, sharedContainerHost, sharedContainerPort, nil
 }
 
 // Build creates the TestContext with all configured databases and servers
@@ -336,6 +224,64 @@ func (b *TestContextBuilder) Build(ctx context.Context) (*TestContext, error) {
 	}, nil
 }
 
+// getOrCreateContainer returns the singleton container, creating it if necessary
+func getOrCreateContainer(ctx context.Context) (testcontainers.Container, string, int, error) {
+	sharedContainerOnce.Do(func() {
+		log.Println("=== Initializing shared PostgreSQL test container (this should only happen ONCE) ===")
+
+		req := testcontainers.ContainerRequest{
+			Image:        "postgres:17",
+			ExposedPorts: []string{"5432/tcp"},
+			Env: map[string]string{
+				"POSTGRES_USER":     "postgres",
+				"POSTGRES_PASSWORD": "postgres",
+				"POSTGRES_DB":       "postgres",
+			},
+			WaitingFor: wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(60 * time.Second),
+			Name: "test_postgres",
+			HostConfigModifier: (func(hc *container.HostConfig) {
+				hc.AutoRemove = false
+			}),
+		}
+
+		pgContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+			Reuse:            true,
+		})
+		if err != nil {
+			sharedContainerErr = fmt.Errorf("failed to start container: %w", err)
+			return
+		}
+
+		host, err := pgContainer.Host(ctx)
+		if err != nil {
+			sharedContainerErr = fmt.Errorf("failed to get container host: %w", err)
+			return
+		}
+
+		port, err := pgContainer.MappedPort(ctx, "5432")
+		if err != nil {
+			sharedContainerErr = fmt.Errorf("failed to get container port: %w", err)
+			return
+		}
+
+		sharedContainer = pgContainer
+		sharedContainerHost = host
+		sharedContainerPort = mustParsePort(port.Port())
+
+		log.Printf("=== Shared PostgreSQL test container ready at %s:%s ===", host, port.Port())
+	})
+
+	if sharedContainerErr != nil {
+		return nil, "", 0, sharedContainerErr
+	}
+
+	return sharedContainer, sharedContainerHost, sharedContainerPort, nil
+}
+
 // createDatabase creates a single test database with migrations
 func createDatabase(ctx context.Context, testID string, config DatabaseConfig, host string, port int, postgresClient *db.DBPool) (*TestDBContext, error) {
 	dbName := fmt.Sprintf("%s_%s", config.database, testID)
@@ -399,7 +345,6 @@ func createServer(_ context.Context, config ServerConfig, dependencyProvider *Te
 	// Generate random ports in range 30000-40000
 	grpcPort := 30000 + rand.Intn(10000)
 	httpPort := grpcPort + 1
-	baseURL := fmt.Sprintf("http://localhost:%d", grpcPort)
 
 	server := config.provider(dependencyProvider)
 
@@ -426,7 +371,6 @@ func createServer(_ context.Context, config ServerConfig, dependencyProvider *Te
 		server:     server,
 		grpcPort:   grpcPort,
 		httpPort:   httpPort,
-		baseURL:    baseURL,
 		serverDone: serverDone,
 	}, nil
 }
@@ -434,11 +378,71 @@ func createServer(_ context.Context, config ServerConfig, dependencyProvider *Te
 // mustParsePort converts string port to int, panics on error
 func mustParsePort(port string) int {
 	var p int
-	_, err := fmt.Sscanf(port, "%d", &p)
-	if err != nil {
+	if _, err := fmt.Sscanf(port, "%d", &p); err != nil {
 		panic(fmt.Sprintf("invalid port: %s", port))
 	}
 	return p
+}
+
+func (tx *TestContext) GetGrpcClient(server ServerConfig) string {
+	var serverContext *TestServerContext
+	if serverContext = tx.servers[server.server]; serverContext == nil {
+		panic(fmt.Sprintf("Server not registered: %s", server.server))
+	}
+	return fmt.Sprintf("localhost:%d", serverContext.grpcPort)
+}
+
+// CleanUp tears down the test context, dropping all test databases and shutting down servers
+// Note: This does NOT terminate the shared container, which is reused across tests
+func (tc *TestContext) CleanUp(ctx context.Context) error {
+	// Shutdown all servers
+	for name, srv := range tc.servers {
+		if srv != nil {
+			srv.Shutdown()
+			log.Printf("Shut down test server: %s", name)
+		}
+	}
+
+	// Close all database clients
+	for _, db := range tc.databases {
+		if db.client != nil {
+			db.client.Close()
+			log.Printf("Closed database client: %s", db.dbName)
+		}
+	}
+
+	// Delete database entries and drop databases
+	if tc.postgresClient != nil {
+		for _, db := range tc.databases {
+
+			// Delete from test_databases table
+			_, err := tc.postgresClient.Exec(ctx,
+				"DELETE FROM test_databases WHERE dbname = $1",
+				db.dbName,
+			)
+			if err != nil {
+				log.Printf("Warning: failed to delete db_name %s from test_databases table: %v", db.dbName, err)
+			}
+
+			// Drop the test database (best effort - may fail if connections still open)
+			dropQuery := fmt.Sprintf("DROP DATABASE IF EXISTS %s", db.dbName)
+			_, err = tc.postgresClient.Exec(ctx, dropQuery)
+			if err != nil {
+				log.Printf("Warning: failed to drop test database %s: %v", db.dbName, err)
+			} else {
+				log.Printf("Dropped test database: %s", db.dbName)
+			}
+		}
+
+		// Close test client
+		tc.postgresClient.Close()
+		tc.postgresClient = nil
+	}
+
+	// DO NOT terminate the container - it's shared across all tests and reused
+	// The container will be cleaned up when the test process exits
+
+	return nil
 }
 
 // TerminateSharedContainer terminates the shared PostgreSQL container

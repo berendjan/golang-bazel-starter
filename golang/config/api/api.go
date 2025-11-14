@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"log"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -46,7 +45,7 @@ func (s *ConfigurationApi[T]) CreateAccount(
 	}
 
 	// Generate account ID
-	accountID := []byte(fmt.Sprintf("account-%s", req.GetName()))
+	accountID := []byte(req.GetName())
 	accountType := uint32(1) // Account type
 
 	// Create account via repository
