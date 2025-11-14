@@ -1,8 +1,10 @@
-package test
+package test_test
 
 import (
 	"context"
 	"testing"
+
+	"github.com/berendjan/golang-bazel-starter/golang/test"
 )
 
 // TestPostgresContainer tests that we can create and connect to a PostgreSQL container
@@ -10,7 +12,7 @@ func TestPostgresContainer(t *testing.T) {
 	ctx := context.Background()
 
 	// Get the container (singleton - will be created once)
-	container, err := GetPostgresContainer(ctx)
+	container, err := test.GetPostgresContainer(ctx)
 	if err != nil {
 		t.Fatalf("Failed to get postgres container: %v", err)
 	}
@@ -37,7 +39,7 @@ func TestPostgresPool(t *testing.T) {
 	ctx := context.Background()
 
 	// Get the pool (singleton)
-	pool, err := GetPostgresPool(ctx)
+	pool, err := test.GetPostgresPool(ctx)
 	if err != nil {
 		t.Fatalf("Failed to get postgres pool: %v", err)
 	}
@@ -60,13 +62,13 @@ func TestPostgresPoolReuse(t *testing.T) {
 	ctx := context.Background()
 
 	// Get pool first time
-	pool1, err := GetPostgresPool(ctx)
+	pool1, err := test.GetPostgresPool(ctx)
 	if err != nil {
 		t.Fatalf("Failed to get first pool: %v", err)
 	}
 
 	// Get pool second time - should be the same instance
-	pool2, err := GetPostgresPool(ctx)
+	pool2, err := test.GetPostgresPool(ctx)
 	if err != nil {
 		t.Fatalf("Failed to get second pool: %v", err)
 	}
@@ -84,7 +86,7 @@ func TestResetDatabase(t *testing.T) {
 	ctx := context.Background()
 
 	// Get pool first
-	pool, err := GetPostgresPool(ctx)
+	pool, err := test.GetPostgresPool(ctx)
 	if err != nil {
 		t.Fatalf("Failed to get pool: %v", err)
 	}
@@ -122,7 +124,7 @@ func TestResetDatabase(t *testing.T) {
 	}
 
 	// Reset database
-	err = ResetDatabase(ctx)
+	err = test.ResetDatabase(ctx)
 	if err != nil {
 		t.Fatalf("Failed to reset database: %v", err)
 	}

@@ -27,13 +27,13 @@ type Config struct {
 }
 
 // DefaultConfig returns default database configuration
-func DefaultConfig() *Config {
+func DefaultConfig(dbName string) *Config {
 	return &Config{
 		Host:              "localhost",
 		Port:              5432,
 		User:              "postgres",
 		Password:          "postgres",
-		Database:          "postgres",
+		Database:          dbName,
 		SSLMode:           "disable",
 		MaxConns:          25,
 		MinConns:          5,
@@ -41,6 +41,11 @@ func DefaultConfig() *Config {
 		MaxConnIdleTime:   30 * time.Minute,
 		HealthCheckPeriod: 1 * time.Minute,
 	}
+}
+
+type DBPool struct {
+	*pgxpool.Pool
+	database string
 }
 
 // ConnectionString builds a PostgreSQL connection string from the config
@@ -52,7 +57,7 @@ func (c *Config) ConnectionString() string {
 }
 
 // NewPool creates a new PostgreSQL connection pool
-func NewPool(ctx context.Context, cfg *Config) (*pgxpool.Pool, error) {
+func NewPool(ctx context.Context, cfg *Config) (*DBPool, error) {
 	// Build pool config
 	poolConfig, err := pgxpool.ParseConfig(cfg.ConnectionString())
 	if err != nil {
@@ -79,11 +84,11 @@ func NewPool(ctx context.Context, cfg *Config) (*pgxpool.Pool, error) {
 	}
 
 	log.Printf("Connected to PostgreSQL at %s:%d (database: %s)", cfg.Host, cfg.Port, cfg.Database)
-	return pool, nil
+	return &DBPool{pool, cfg.Database}, nil
 }
 
 // MustNewPool creates a new connection pool or panics on error
-func MustNewPool(ctx context.Context, cfg *Config) *pgxpool.Pool {
+func MustNewPool(ctx context.Context, cfg *Config) *DBPool {
 	pool, err := NewPool(ctx, cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -92,9 +97,12 @@ func MustNewPool(ctx context.Context, cfg *Config) *pgxpool.Pool {
 }
 
 // Close gracefully closes the database connection pool
-func Close(pool *pgxpool.Pool) {
-	if pool != nil {
-		pool.Close()
-		log.Println("Database connection pool closed")
+func (pool *DBPool) Close() {
+	if pool == nil || pool.Pool == nil {
+		log.Printf("WARN: Attempted to close nil pool")
+		return
 	}
+	log.Printf("Closing database connection pool (database: %s, stats before: %+v)", pool.database, pool.Pool.Stat())
+	pool.Pool.Close()
+	log.Printf("Database connection pool closed (database: %s)", pool.database)
 }

@@ -1,20 +1,34 @@
 load("@rules_go//go:def.bzl", "go_library", "go_test")
 
+go_test(
+    name = "test_test",
+    testonly = True,
+    srcs = [
+        "postgres_container_test.go",
+        "testcontextbuilder_test.go",
+    ],
+    deps = [":test"],
+)
+
 go_library(
     name = "test",
-    srcs = ["postgres_container.go"],
+    srcs = [
+        "postgres_container.go",
+        "testcontext.go",
+        "textcontextproviders.go",
+    ],
     importpath = "github.com/berendjan/golang-bazel-starter/golang/test",
     visibility = ["//visibility:public"],
     deps = [
+        "//golang/config/api",
+        "//golang/config/db",
+        "//golang/config/repository",
         "//golang/framework/db",
-        "@com_github_jackc_pgx_v5//pgxpool",
+        "//golang/framework/serverbase",
+        "//golang/grpcserver:grpcserver_lib",
+        "@com_github_docker_docker//api/types/container",
+        "@com_github_google_uuid//:uuid",
         "@com_github_testcontainers_testcontainers_go//:testcontainers-go",
         "@com_github_testcontainers_testcontainers_go//wait",
     ],
-)
-
-go_test(
-    name = "test_test",
-    srcs = ["postgres_container_test.go"],
-    embed = [":test"],
 )

@@ -8,14 +8,13 @@ import (
 	"time"
 
 	"github.com/berendjan/golang-bazel-starter/golang/framework/db"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 var (
 	pgContainer     testcontainers.Container
-	pgPool          *pgxpool.Pool
+	pgPool          *db.DBPool
 	containerOnce   sync.Once
 	containerConfig *PostgresContainerConfig
 )
@@ -78,7 +77,7 @@ func GetPostgresContainer(ctx context.Context) (testcontainers.Container, error)
 
 // GetPostgresPool returns a singleton connection pool to the test PostgreSQL container
 // It automatically creates and starts the container if needed
-func GetPostgresPool(ctx context.Context) (*pgxpool.Pool, error) {
+func GetPostgresPool(ctx context.Context) (*db.DBPool, error) {
 	if pgPool != nil {
 		return pgPool, nil
 	}

@@ -1,11 +1,12 @@
 load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "server",
-    srcs = ["server.go"],
-    importpath = "github.com/berendjan/golang-bazel-starter/golang/config/server",
+    name = "api",
+    srcs = ["api.go"],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/config/api",
     visibility = ["//visibility:public"],
     deps = [
+        "//golang/config/interfaces",
         "//golang/config/repository",
         "//proto/common/v1:common",
         "//proto/configuration/v1:configuration",

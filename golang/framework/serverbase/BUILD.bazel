@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "serverbase",
+    srcs = [
+        "interface.go",
+        "serverbase.go",
+        "serverbuilder.go",
+    ],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/framework/serverbase",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@grpc_ecosystem_grpc_gateway//runtime",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//reflection",
+    ],
+)

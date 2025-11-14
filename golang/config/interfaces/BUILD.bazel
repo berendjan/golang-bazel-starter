@@ -1,0 +1,9 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "interfaces",
+    srcs = ["interfaces.go"],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/config/interfaces",
+    visibility = ["//visibility:public"],
+    deps = ["//proto/configuration/v1:configuration"],
+)

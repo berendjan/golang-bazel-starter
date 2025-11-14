@@ -1,61 +1,35 @@
-package config
+package repository
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"log"
-	"sync"
 
+	"github.com/berendjan/golang-bazel-starter/golang/config/interfaces"
 	"github.com/berendjan/golang-bazel-starter/golang/framework/db"
-	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/berendjan/golang-bazel-starter/golang/config/repository"
-
 	commonpb "github.com/berendjan/golang-bazel-starter/proto/common/v1"
 	configpb "github.com/berendjan/golang-bazel-starter/proto/configuration/v1"
 )
 
-//go:embed migrations/*.sql
-var migrationsFS embed.FS
-
-var (
-	pool *pgxpool.Pool
-	once sync.Once
+const (
+	DbName string = "config"
 )
-
-// GetPool returns a singleton database connection pool
-// It automatically runs migrations and creates the pool on first call
-// Panics if pool creation fails
-func GetPool() *pgxpool.Pool {
-	once.Do(func() {
-		ctx := context.Background()
-
-		// Setup database configuration
-		dbConfig := db.DefaultConfig()
-		// Override defaults if needed:
-		// dbConfig.Host = "localhost"
-		// dbConfig.Database = "myapp"
-
-		// Run migrations
-		db.MustRunMigrations(dbConfig.ConnectionString(), migrationsFS)
-
-		// Create database connection pool
-		pool = db.MustNewPool(ctx, dbConfig)
-	})
-	return pool
-}
 
 // AccountDbRepository implements the AccountRepository interface
 type AccountDbRepository struct {
-	pool *pgxpool.Pool
+	pool *db.DBPool
 }
 
 // Compile-time check that AccountDbRepository implements AccountRepository
-var _ repository.AccountRepository = (*AccountDbRepository)(nil)
+var _ interfaces.AccountRepository = (*AccountDbRepository)(nil)
+
+// dependency injection provider
+type AccountRepositoryProvider[T interfaces.AccountRepository] interface {
+	GetAccountRepository() T
+}
 
 // NewAccountRepository creates a new AccountRepository implementation
-func NewAccountRepository(pool *pgxpool.Pool) *AccountDbRepository {
+func NewAccountRepository(pool *db.DBPool) *AccountDbRepository {
 	return &AccountDbRepository{
 		pool: pool,
 	}

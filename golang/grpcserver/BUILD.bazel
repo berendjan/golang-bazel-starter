@@ -1,0 +1,25 @@
+### GENERATED FILE ### DO NOT EDIT ###
+
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_binary(
+    name = "grpcserver",
+    embed = [":grpcserver_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "grpcserver_lib",
+    srcs = [
+        "main.go",
+        "server.go",
+    ],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/grpcserver",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//golang/config/api",
+        "//golang/config/repository",
+        "//golang/framework/db",
+        "//golang/framework/serverbase",
+    ],
+)

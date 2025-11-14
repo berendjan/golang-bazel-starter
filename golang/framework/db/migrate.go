@@ -24,6 +24,13 @@ func RunMigrations(connectionString string, migrationFiles embed.FS) error {
 		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
 
+	// Ensure migration connections are closed
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			log.Printf("Warning: error closing migration connections: src=%v, db=%v", srcErr, dbErr)
+		}
+	}()
+
 	// Run migrations
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("failed to run migrations: %w", err)
@@ -63,6 +70,13 @@ func RollbackMigration(connectionString string, migrationFiles embed.FS) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
+
+	// Ensure migration connections are closed
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			log.Printf("Warning: error closing migration connections: src=%v, db=%v", srcErr, dbErr)
+		}
+	}()
 
 	if err := m.Steps(-1); err != nil {
 		return fmt.Errorf("failed to rollback migration: %w", err)

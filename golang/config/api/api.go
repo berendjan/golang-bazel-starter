@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"context"
@@ -11,28 +11,33 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/berendjan/golang-bazel-starter/golang/config/interfaces"
 	"github.com/berendjan/golang-bazel-starter/golang/config/repository"
 	commonpb "github.com/berendjan/golang-bazel-starter/proto/common/v1"
 	configpb "github.com/berendjan/golang-bazel-starter/proto/configuration/v1"
 	gw "github.com/berendjan/golang-bazel-starter/proto/configuration_service/v1/gateway"
 )
 
-// ConfigurationServer implements the Configuration gRPC service
-type ConfigurationServer[T repository.AccountRepository] struct {
+// ConfigurationApi implements the Configuration gRPC service
+type ConfigurationApi[T interfaces.AccountRepository] struct {
 	gw.UnimplementedConfigurationServer
 
 	accountRepo T
 }
 
-// NewConfigurationServer creates a new Configuration service server
-func NewConfigurationServer[T repository.AccountRepository](accountRepo T) *ConfigurationServer[T] {
-	return &ConfigurationServer[T]{
-		accountRepo: accountRepo,
+type AccountApiProvider[T interfaces.AccountRepository] interface {
+	GetAccountApi() *ConfigurationApi[T]
+}
+
+// Build creates a new Configuration service Api
+func NewConfigurationApi[T interfaces.AccountRepository](accountRepoProvider repository.AccountRepositoryProvider[T]) *ConfigurationApi[T] {
+	return &ConfigurationApi[T]{
+		accountRepo: accountRepoProvider.GetAccountRepository(),
 	}
 }
 
 // CreateAccount creates a new account
-func (s *ConfigurationServer[T]) CreateAccount(
+func (s *ConfigurationApi[T]) CreateAccount(
 	ctx context.Context,
 	req *configpb.AccountCreationRequestProto,
 ) (*configpb.AccountConfigurationProto, error) {
@@ -55,7 +60,7 @@ func (s *ConfigurationServer[T]) CreateAccount(
 }
 
 // DeleteAccount deletes an account
-func (s *ConfigurationServer[T]) DeleteAccount(
+func (s *ConfigurationApi[T]) DeleteAccount(
 	ctx context.Context,
 	req *configpb.AccountDeletionRequestProto,
 ) (*commonpb.StatusResponseProto, error) {
@@ -87,7 +92,7 @@ func (s *ConfigurationServer[T]) DeleteAccount(
 }
 
 // ListAccounts lists all accounts
-func (s *ConfigurationServer[T]) ListAccounts(
+func (s *ConfigurationApi[T]) ListAccounts(
 	ctx context.Context,
 	req *configpb.ListAccountsRequestProto,
 ) (*configpb.ListAccountsResponseProto, error) {
@@ -103,11 +108,11 @@ func (s *ConfigurationServer[T]) ListAccounts(
 }
 
 // RegisterGRPC implements server_builder.GRPCServiceRegistrar
-func (s *ConfigurationServer[T]) RegisterGRPC(server grpc.ServiceRegistrar) {
-	gw.RegisterConfigurationServer(server, s)
+func (s *ConfigurationApi[T]) RegisterGRPC(Api grpc.ServiceRegistrar) {
+	gw.RegisterConfigurationServer(Api, s)
 }
 
 // RegisterGateway implements server_builder.HTTPGatewayRegistrar
-func (s *ConfigurationServer[T]) RegisterGateway(ctx context.Context, mux *runtime.ServeMux) error {
+func (s *ConfigurationApi[T]) RegisterGateway(ctx context.Context, mux *runtime.ServeMux) error {
 	return gw.RegisterConfigurationHandlerServer(ctx, mux, s)
 }

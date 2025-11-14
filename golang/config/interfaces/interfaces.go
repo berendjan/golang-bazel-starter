@@ -1,4 +1,4 @@
-package repository
+package interfaces
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 // AccountRepository defines the interface for account operations
 type AccountRepository interface {
+
 	// CreateAccount creates a new account and returns the account configuration
 	CreateAccount(ctx context.Context, accountID []byte, accountType uint32) (*configpb.AccountConfigurationProto, error)
 
