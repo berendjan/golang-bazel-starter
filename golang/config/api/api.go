@@ -40,21 +40,18 @@ func (s *ConfigurationApi[T]) CreateAccount(
 	ctx context.Context,
 	req *configpb.AccountCreationRequestProto,
 ) (*configpb.AccountConfigurationProto, error) {
+	// Validate request
 	if req.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
 
-	// Generate account ID
-	accountID := []byte(req.GetName())
-	accountType := uint32(1) // Account type
-
-	// Create account via repository
-	account, err := s.accountRepo.CreateAccount(ctx, accountID, accountType)
+	// Pass proto message directly to repository
+	account, err := s.accountRepo.CreateAccount(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create account: %v", err)
 	}
 
-	log.Printf("Created account: %s, with id %s", req.GetName(), string(accountID))
+	log.Printf("Created account: %s", req.GetName())
 	return account, nil
 }
 
@@ -69,25 +66,18 @@ func (s *ConfigurationApi[T]) DeleteAccount(
 	// Try to decode from base64 (HTTP gateway sends it encoded)
 	if decoded, err := base64.StdEncoding.DecodeString(accountKey); err == nil {
 		accountKey = string(decoded)
+		// Update the request with decoded ID
+		req.Id = accountKey
 	}
 
-	// Delete account via repository
-	rowsAffected, err := s.accountRepo.DeleteAccount(ctx, []byte(accountKey))
+	// Pass proto message directly to repository
+	response, err := s.accountRepo.DeleteAccount(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete account: %v", err)
 	}
 
-	// Check if account was found
-	if rowsAffected == 0 {
-		return nil, status.Error(codes.NotFound, "account not found: "+accountKey)
-	}
-
 	log.Printf("Deleted account: %s", accountKey)
-
-	return &commonpb.StatusResponseProto{
-		Code:    200,
-		Message: "Account deleted successfully",
-	}, nil
+	return response, nil
 }
 
 // ListAccounts lists all accounts
@@ -95,15 +85,13 @@ func (s *ConfigurationApi[T]) ListAccounts(
 	ctx context.Context,
 	req *configpb.ListAccountsRequestProto,
 ) (*configpb.ListAccountsResponseProto, error) {
-	// List accounts via repository
-	accounts, err := s.accountRepo.ListAccounts(ctx)
+	// Pass proto message directly to repository
+	response, err := s.accountRepo.ListAccounts(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list accounts: %v", err)
 	}
 
-	return &configpb.ListAccountsResponseProto{
-		Accounts: accounts,
-	}, nil
+	return response, nil
 }
 
 // RegisterGRPC implements server_builder.GRPCServiceRegistrar

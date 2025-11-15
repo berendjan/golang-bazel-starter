@@ -5,5 +5,8 @@ go_library(
     srcs = ["interfaces.go"],
     importpath = "github.com/berendjan/golang-bazel-starter/golang/config/interfaces",
     visibility = ["//visibility:public"],
-    deps = ["//proto/configuration/v1:configuration"],
+    deps = [
+        "//proto/common/v1:common",
+        "//proto/configuration/v1:configuration",
+    ],
 )

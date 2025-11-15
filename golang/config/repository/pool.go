@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/berendjan/golang-bazel-starter/golang/config/interfaces"
 	"github.com/berendjan/golang-bazel-starter/golang/framework/db"
@@ -36,7 +37,15 @@ func NewAccountRepository(pool *db.DBPool) *AccountDbRepository {
 }
 
 // CreateAccount creates a new account and returns the account configuration
-func (r *AccountDbRepository) CreateAccount(ctx context.Context, accountID []byte, accountType uint32) (*configpb.AccountConfigurationProto, error) {
+func (r *AccountDbRepository) CreateAccount(ctx context.Context, req *configpb.AccountCreationRequestProto) (*configpb.AccountConfigurationProto, error) {
+	if req.GetName() == "" {
+		return nil, fmt.Errorf("name is required")
+	}
+
+	// Generate account ID from name
+	accountID := []byte(req.GetName())
+	accountType := uint32(1) // Default account type
+
 	query := `
 		INSERT INTO accounts (id, type)
 		VALUES ($1, $2)
@@ -62,25 +71,38 @@ func (r *AccountDbRepository) CreateAccount(ctx context.Context, accountID []byt
 	return account, nil
 }
 
-// DeleteAccount deletes an account by ID and returns the number of rows affected
-func (r *AccountDbRepository) DeleteAccount(ctx context.Context, accountID []byte) (int64, error) {
+// DeleteAccount deletes an account by ID and returns status response
+func (r *AccountDbRepository) DeleteAccount(ctx context.Context, req *configpb.AccountDeletionRequestProto) (*commonpb.StatusResponseProto, error) {
+	accountKey := req.GetId()
+
+	// Try to decode from base64 (HTTP gateway sends it encoded)
+	// Removed base64 decoding logic - moved from API layer
+
 	query := `DELETE FROM accounts WHERE id = $1`
-	result, err := r.pool.Exec(ctx, query, accountID)
+	result, err := r.pool.Exec(ctx, query, []byte(accountKey))
 	if err != nil {
 		log.Printf("Failed to delete account from database: %v", err)
-		return 0, fmt.Errorf("failed to delete account: %w", err)
+		return nil, fmt.Errorf("failed to delete account: %w", err)
 	}
 
 	rowsAffected := result.RowsAffected()
-	if rowsAffected > 0 {
-		log.Printf("Deleted account: %s", string(accountID))
+	if rowsAffected == 0 {
+		return &commonpb.StatusResponseProto{
+			Code:    404,
+			Message: "Account not found: " + accountKey,
+		}, fmt.Errorf("account not found: %s", accountKey)
 	}
 
-	return rowsAffected, nil
+	log.Printf("Deleted account: %s", accountKey)
+
+	return &commonpb.StatusResponseProto{
+		Code:    200,
+		Message: "Account deleted successfully",
+	}, nil
 }
 
 // ListAccounts retrieves all accounts ordered by creation time
-func (r *AccountDbRepository) ListAccounts(ctx context.Context) ([]*configpb.AccountConfigurationProto, error) {
+func (r *AccountDbRepository) ListAccounts(ctx context.Context, req *configpb.ListAccountsRequestProto) (*configpb.ListAccountsResponseProto, error) {
 	query := `SELECT id, type, created_at, updated_at FROM accounts ORDER BY created_at DESC`
 
 	rows, err := r.pool.Query(ctx, query)
@@ -94,7 +116,7 @@ func (r *AccountDbRepository) ListAccounts(ctx context.Context) ([]*configpb.Acc
 	for rows.Next() {
 		var id []byte
 		var accountType uint32
-		var createdAt, updatedAt string
+		var createdAt, updatedAt time.Time
 
 		if err := rows.Scan(&id, &accountType, &createdAt, &updatedAt); err != nil {
 			log.Printf("Failed to scan account row: %v", err)
@@ -116,5 +138,7 @@ func (r *AccountDbRepository) ListAccounts(ctx context.Context) ([]*configpb.Acc
 	}
 
 	log.Printf("Listed %d accounts", len(accounts))
-	return accounts, nil
+	return &configpb.ListAccountsResponseProto{
+		Accounts: accounts,
+	}, nil
 }

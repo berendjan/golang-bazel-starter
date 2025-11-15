@@ -231,7 +231,7 @@ func getOrCreateContainer(ctx context.Context) (testcontainers.Container, string
 
 		req := testcontainers.ContainerRequest{
 			Image:        "postgres:17",
-			ExposedPorts: []string{"5432/tcp"},
+			ExposedPorts: []string{"5432/tcp", "29000:5432/tcp"},
 			Env: map[string]string{
 				"POSTGRES_USER":     "postgres",
 				"POSTGRES_PASSWORD": "postgres",
@@ -262,17 +262,11 @@ func getOrCreateContainer(ctx context.Context) (testcontainers.Container, string
 			return
 		}
 
-		port, err := pgContainer.MappedPort(ctx, "5432")
-		if err != nil {
-			sharedContainerErr = fmt.Errorf("failed to get container port: %w", err)
-			return
-		}
-
 		sharedContainer = pgContainer
 		sharedContainerHost = host
-		sharedContainerPort = mustParsePort(port.Port())
+		sharedContainerPort = 29000
 
-		log.Printf("=== Shared PostgreSQL test container ready at %s:%s ===", host, port.Port())
+		log.Printf("=== Shared PostgreSQL test container ready at %s:%d ===", host, sharedContainerPort)
 	})
 
 	if sharedContainerErr != nil {
@@ -373,15 +367,6 @@ func createServer(_ context.Context, config ServerConfig, dependencyProvider *Te
 		httpPort:   httpPort,
 		serverDone: serverDone,
 	}, nil
-}
-
-// mustParsePort converts string port to int, panics on error
-func mustParsePort(port string) int {
-	var p int
-	if _, err := fmt.Sscanf(port, "%d", &p); err != nil {
-		panic(fmt.Sprintf("invalid port: %s", port))
-	}
-	return p
 }
 
 func (tx *TestContext) GetGrpcClient(server ServerConfig) string {

@@ -1,12 +1,12 @@
-load("@rules_go//go:def.bzl", "go_library", "go_test")
+load("@rules_go//go:def.bzl", "go_library")
+load(":test_env.bzl", "go_test")
+
+# gazelle:map_kind go_test go_test //golang/test:test_env.bzl
 
 go_test(
     name = "test_test",
     testonly = True,
-    srcs = [
-        "postgres_container_test.go",
-        "testcontextbuilder_test.go",
-    ],
+    srcs = ["testcontextbuilder_test.go"],
     deps = [
         ":test",
         "//golang/config/client",
@@ -16,7 +16,6 @@ go_test(
 go_library(
     name = "test",
     srcs = [
-        "postgres_container.go",
         "testcontext.go",
         "textcontextproviders.go",
     ],

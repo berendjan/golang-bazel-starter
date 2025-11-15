@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_test")
+load("//golang/test:test_env.bzl", "go_test")
 
 go_test(
     name = "abstract_test",
