@@ -30,7 +30,6 @@ go_library(
         "//golang/generated/interfaces",
         "//golang/grpcserver:grpcserver_lib",
         "//golang/grpcserver/messenger",
-        "//golang/middleware/middleone",
         "//golang/middleware/middletwo",
         "//proto/configuration/v1:configuration",
         "@com_github_docker_docker//api/types/container",
