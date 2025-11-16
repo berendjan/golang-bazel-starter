@@ -7,12 +7,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// InterfaceConfig defines the interface-specific configuration
+type InterfaceConfig struct {
+	Package string   `yaml:"package"`
+	Imports []string `yaml:"imports,omitempty"`
+}
+
 // InterfaceSpec defines the YAML specification structure for interface generation
 type InterfaceSpec struct {
-	Package string         `yaml:"package"`
-	Imports []string       `yaml:"imports,omitempty"`
-	Handlers []Handler     `yaml:"handlers"`
-	Routes  []Route        `yaml:"routes"`
+	InterfaceConfig InterfaceConfig `yaml:"interfaces"`
+	Package         string          `yaml:"package,omitempty"` // Deprecated, for backwards compatibility
+	Imports         []string        `yaml:"imports,omitempty"` // Deprecated, for backwards compatibility
+	Handlers        []Handler       `yaml:"handlers"`
+	Routes          []Route         `yaml:"routes"`
 }
 
 // Handler defines a handler with its name and type
@@ -46,6 +53,14 @@ func LoadSpec(filepath string) (*InterfaceSpec, error) {
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
+	// Merge interface config into top-level fields (prefer interface config)
+	if spec.InterfaceConfig.Package != "" {
+		spec.Package = spec.InterfaceConfig.Package
+	}
+	if len(spec.InterfaceConfig.Imports) > 0 {
+		spec.Imports = spec.InterfaceConfig.Imports
+	}
+
 	if err := spec.Validate(); err != nil {
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
@@ -55,9 +70,7 @@ func LoadSpec(filepath string) (*InterfaceSpec, error) {
 
 // Validate checks if the spec is valid
 func (s *InterfaceSpec) Validate() error {
-	if s.Package == "" {
-		return fmt.Errorf("package name is required")
-	}
+	// Package can be set via CLI flag, so don't require it in YAML
 	if len(s.Handlers) == 0 {
 		return fmt.Errorf("at least one handler is required")
 	}

@@ -1,10 +1,10 @@
 # gazelle:ignore
 load("@rules_go//go:def.bzl", "go_library")
 
-# Generate messenger code from YAML specification
+# Generate messenger code from shared routing specification
 genrule(
     name = "generate_messenger",
-    srcs = ["messenger.yaml"],
+    srcs = ["//golang/generated:routing.yaml"],
     outs = ["generated_messenger.go"],
     cmd = "$(location //tools/codegen/messenger-gen:messenger-gen) -spec $(SRCS) -output $@",
     tools = ["//tools/codegen/messenger-gen"],

@@ -1,0 +1,2 @@
+# Shared routing specification
+exports_files(["routing.yaml"])

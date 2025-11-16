@@ -1,10 +1,10 @@
 # gazelle:ignore
 load("@rules_go//go:def.bzl", "go_library")
 
-# Generate interfaces from YAML specification
+# Generate interfaces from shared routing specification
 genrule(
     name = "generate_interfaces",
-    srcs = ["interfaces.yaml"],
+    srcs = ["//golang/generated:routing.yaml"],
     outs = ["generated_interfaces.go"],
     cmd = "$(location //tools/codegen/interface-gen:interface-gen) -spec $(SRCS) -output $@",
     tools = ["//tools/codegen/interface-gen"],

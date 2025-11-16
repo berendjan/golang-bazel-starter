@@ -28,6 +28,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Validate required fields
+	if spec.Package == "" {
+		fmt.Fprintf(os.Stderr, "Error: package name is required in YAML (messenger.package)\n")
+		os.Exit(1)
+	}
+	if spec.MessengerName == "" {
+		fmt.Fprintf(os.Stderr, "Error: messenger name is required in YAML (messenger.messenger_name)\n")
+		os.Exit(1)
+	}
+
 	// Generate code
 	generator := NewGenerator(spec)
 	if err := generator.WriteToFile(outputFile); err != nil {

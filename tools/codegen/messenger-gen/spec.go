@@ -7,13 +7,21 @@ import (
 	"gopkg.in/yaml.v3" // This will be resolved by go mod tidy && bazel mod tidy
 )
 
+// MessengerConfig defines the messenger-specific configuration
+type MessengerConfig struct {
+	Package       string   `yaml:"package"`
+	MessengerName string   `yaml:"messenger_name"`
+	Imports       []string `yaml:"imports,omitempty"`
+}
+
 // MessengerSpec defines the YAML specification structure
 type MessengerSpec struct {
-	Package       string         `yaml:"package"`
-	MessengerName string         `yaml:"messenger_name"`
-	Imports       []string       `yaml:"imports,omitempty"`
-	Handlers      []Handler      `yaml:"handlers"`
-	Routes        []Route        `yaml:"routes"`
+	MessengerConfig MessengerConfig `yaml:"messenger"`
+	Package         string          `yaml:"package,omitempty"`         // Deprecated, for backwards compatibility
+	MessengerName   string          `yaml:"messenger_name,omitempty"` // Deprecated, for backwards compatibility
+	Imports         []string        `yaml:"imports,omitempty"`         // Deprecated, for backwards compatibility
+	Handlers        []Handler       `yaml:"handlers"`
+	Routes          []Route         `yaml:"routes"`
 }
 
 // Handler defines a handler with its name and type
@@ -47,6 +55,17 @@ func LoadSpec(filepath string) (*MessengerSpec, error) {
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
+	// Merge messenger config into top-level fields (prefer messenger config)
+	if spec.MessengerConfig.Package != "" {
+		spec.Package = spec.MessengerConfig.Package
+	}
+	if spec.MessengerConfig.MessengerName != "" {
+		spec.MessengerName = spec.MessengerConfig.MessengerName
+	}
+	if len(spec.MessengerConfig.Imports) > 0 {
+		spec.Imports = spec.MessengerConfig.Imports
+	}
+
 	if err := spec.Validate(); err != nil {
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
@@ -56,12 +75,7 @@ func LoadSpec(filepath string) (*MessengerSpec, error) {
 
 // Validate checks if the spec is valid
 func (s *MessengerSpec) Validate() error {
-	if s.Package == "" {
-		return fmt.Errorf("package name is required")
-	}
-	if s.MessengerName == "" {
-		return fmt.Errorf("messenger_name is required")
-	}
+	// Package and messenger name can be set via CLI flags, so don't require them in YAML
 	if len(s.Handlers) == 0 {
 		return fmt.Errorf("at least one handler is required")
 	}

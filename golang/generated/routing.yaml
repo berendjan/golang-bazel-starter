@@ -1,27 +1,37 @@
-# Interfaces specification
-# Defines message routing for the configuration service
+# Message routing specification
+# This file is shared between interface-gen and messenger-gen
+# Defines the message routing graph for the configuration service
 
-package: interfaces
+# Interface generation configuration
+interfaces:
+  package: interfaces
+  imports:
+    - 'commonpb "github.com/berendjan/golang-bazel-starter/proto/common/v1"'
+    - 'configpb "github.com/berendjan/golang-bazel-starter/proto/configuration/v1"'
 
-# Go imports needed for the generated code
-imports:
-  - 'commonpb "github.com/berendjan/golang-bazel-starter/proto/common/v1"'
-  - 'configpb "github.com/berendjan/golang-bazel-starter/proto/configuration/v1"'
+# Messenger generation configuration
+messenger:
+  package: messenger
+  messenger_name: GrpcMessenger
+  imports:
+    - 'geninterfaces "github.com/berendjan/golang-bazel-starter/golang/generated/interfaces"'
+    - 'commonpb "github.com/berendjan/golang-bazel-starter/proto/common/v1"'
+    - 'configpb "github.com/berendjan/golang-bazel-starter/proto/configuration/v1"'
 
-# handlers
+# Handler definitions
 handlers:
   - name: accountRepository
     type: "configrepository.AccountDbRepository"
-  - name: AccountApi
+  - name: accountApi
     type: "configapi.ConfigurationApi"
   - name: middlewareOne
     type: "middleone.MiddleOne"
   - name: middlewareTwo
     type: "middletwo.MiddleTwo"
 
-# Routes define message flow keep in sync with `golang/generated/interfaces/interfaces.yaml`
+# Routes define message flow from sources to receivers
 routes:
-  - source: AccountApi
+  - source: accountApi
     messages:
 
       - message: "*configpb.MiddleOneRequestProto"

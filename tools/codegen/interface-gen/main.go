@@ -28,6 +28,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Validate that package is set
+	if spec.Package == "" {
+		fmt.Fprintf(os.Stderr, "Error: package name is required in YAML (interfaces.package)\n")
+		os.Exit(1)
+	}
+
 	// Generate the code
 	generator := NewGenerator(spec)
 	if err := generator.WriteToFile(outputFile); err != nil {
