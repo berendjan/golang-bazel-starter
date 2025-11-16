@@ -1,14 +1,12 @@
 load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "repository",
-    srcs = ["pool.go"],
-    importpath = "github.com/berendjan/golang-bazel-starter/golang/config/repository",
+    name = "middleone",
+    srcs = ["middleone.go"],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/middleware/middleone",
     visibility = ["//visibility:public"],
     deps = [
-        "//golang/framework/db",
         "//golang/generated/interfaces",
-        "//proto/common/v1:common",
         "//proto/configuration/v1:configuration",
     ],
 )

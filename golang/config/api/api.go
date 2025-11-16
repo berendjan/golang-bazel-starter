@@ -10,28 +10,23 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/berendjan/golang-bazel-starter/golang/config/interfaces"
-	"github.com/berendjan/golang-bazel-starter/golang/config/repository"
+	geninterfaces "github.com/berendjan/golang-bazel-starter/golang/generated/interfaces"
 	commonpb "github.com/berendjan/golang-bazel-starter/proto/common/v1"
 	configpb "github.com/berendjan/golang-bazel-starter/proto/configuration/v1"
 	gw "github.com/berendjan/golang-bazel-starter/proto/configuration_service/v1/gateway"
 )
 
 // ConfigurationApi implements the Configuration gRPC service
-type ConfigurationApi[T interfaces.AccountRepository] struct {
+type ConfigurationApi[T geninterfaces.AccountApiSendable] struct {
 	gw.UnimplementedConfigurationServer
 
-	accountRepo T
-}
-
-type AccountApiProvider[T interfaces.AccountRepository] interface {
-	GetAccountApi() *ConfigurationApi[T]
+	accountRepo *T
 }
 
 // Build creates a new Configuration service Api
-func NewConfigurationApi[T interfaces.AccountRepository](accountRepoProvider repository.AccountRepositoryProvider[T]) *ConfigurationApi[T] {
+func NewConfigurationApi[T geninterfaces.AccountApiSendable](accountRepo *T) *ConfigurationApi[T] {
 	return &ConfigurationApi[T]{
-		accountRepo: accountRepoProvider.GetAccountRepository(),
+		accountRepo: accountRepo,
 	}
 }
 
@@ -45,8 +40,13 @@ func (s *ConfigurationApi[T]) CreateAccount(
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
 
+	// Wrap request in MiddleOneRequestProto
+	wrappedReq := &configpb.MiddleOneRequestProto{
+		Request: req,
+	}
+
 	// Pass proto message directly to repository
-	account, err := s.accountRepo.CreateAccount(ctx, req)
+	account, err := (*s.accountRepo).SendMiddleOneRequestFromAccountApi(ctx, wrappedReq)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create account: %v", err)
 	}
@@ -71,7 +71,7 @@ func (s *ConfigurationApi[T]) DeleteAccount(
 	}
 
 	// Pass proto message directly to repository
-	response, err := s.accountRepo.DeleteAccount(ctx, req)
+	response, err := (*s.accountRepo).SendAccountDeletionRequestFromAccountApi(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete account: %v", err)
 	}
@@ -86,7 +86,7 @@ func (s *ConfigurationApi[T]) ListAccounts(
 	req *configpb.ListAccountsRequestProto,
 ) (*configpb.ListAccountsResponseProto, error) {
 	// Pass proto message directly to repository
-	response, err := s.accountRepo.ListAccounts(ctx, req)
+	response, err := (*s.accountRepo).SendListAccountsRequestFromAccountApi(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list accounts: %v", err)
 	}

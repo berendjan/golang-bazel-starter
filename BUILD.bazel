@@ -1,11 +1,21 @@
 load("@gazelle//:def.bzl", "gazelle")
 
 # gazelle:prefix github.com/berendjan/golang-bazel-starter
+
+# resolve annotations to the bazel @googleapis rule
 # gazelle:resolve proto proto google/api/annotations.proto @googleapis//google/api:annotations_proto
 # gazelle:resolve proto go google/api/annotations.proto @googleapis//google/api:annotations_go_proto
+
+# set the grpc v2 compiler
 # gazelle:go_grpc_compilers @rules_go//proto:go_grpc_v2
+
+# enure it reads from the @protobuf rules
 # gazelle:map_kind proto_library proto_library @protobuf//bazel:proto_library.bzl
+
+# make proto file import statements simpler to read, see also .vscode settings for linting
 # gazelle:proto_strip_import_prefix /proto
+
+# Resolve the manual proto gateway library
 # gazelle:resolve_regexp go github.com/berendjan/golang-bazel-starter/proto/(.*)/v1/gateway //proto/$1/v1:gateway
 
 gazelle(

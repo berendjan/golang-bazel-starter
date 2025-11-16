@@ -1,0 +1,23 @@
+# gazelle:ignore
+load("@rules_go//go:def.bzl", "go_library")
+
+# Generate interfaces from YAML specification
+genrule(
+    name = "generate_interfaces",
+    srcs = ["interfaces.yaml"],
+    outs = ["generated_interfaces.go"],
+    cmd = "$(location //tools/codegen/interface-gen:interface-gen) -spec $(SRCS) -output $@",
+    tools = ["//tools/codegen/interface-gen"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "interfaces",
+    srcs = [":generate_interfaces"],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/generated/interfaces",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//proto/common/v1:common",
+        "//proto/configuration/v1:configuration",
+    ],
+)

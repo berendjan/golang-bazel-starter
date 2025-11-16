@@ -1,11 +1,12 @@
 load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "interfaces",
-    srcs = ["interfaces.go"],
-    importpath = "github.com/berendjan/golang-bazel-starter/golang/config/interfaces",
+    name = "middletwo",
+    srcs = ["middletwo.go"],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/middleware/middletwo",
     visibility = ["//visibility:public"],
     deps = [
+        "//golang/generated/interfaces",
         "//proto/common/v1:common",
         "//proto/configuration/v1:configuration",
     ],

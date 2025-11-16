@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "messenger-gen_lib",
+    srcs = [
+        "generator.go",
+        "main.go",
+        "spec.go",
+        "templates.go",
+    ],
+    importpath = "github.com/berendjan/golang-bazel-starter/tools/codegen/messenger-gen",
+    visibility = ["//visibility:private"],
+    deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
+)
+
+go_binary(
+    name = "messenger-gen",
+    embed = [":messenger-gen_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,28 @@
+# gazelle:ignore
+load("@rules_go//go:def.bzl", "go_library")
+
+# Generate messenger code from YAML specification
+genrule(
+    name = "generate_messenger",
+    srcs = ["messenger.yaml"],
+    outs = ["generated_messenger.go"],
+    cmd = "$(location //tools/codegen/messenger-gen:messenger-gen) -spec $(SRCS) -output $@",
+    tools = ["//tools/codegen/messenger-gen"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "messenger",
+    srcs = [":generate_messenger"],
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/grpcserver/messenger",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//golang/config/api",
+        "//golang/config/repository",
+        "//golang/generated/interfaces",
+        "//golang/middleware/middleone",
+        "//golang/middleware/middletwo",
+        "//proto/common/v1:common",
+        "//proto/configuration/v1:configuration",
+    ],
+)

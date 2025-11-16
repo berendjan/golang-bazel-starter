@@ -6,8 +6,7 @@ go_library(
     importpath = "github.com/berendjan/golang-bazel-starter/golang/config/api",
     visibility = ["//visibility:public"],
     deps = [
-        "//golang/config/interfaces",
-        "//golang/config/repository",
+        "//golang/generated/interfaces",
         "//proto/common/v1:common",
         "//proto/configuration/v1:configuration",
         "//proto/configuration_service/v1:gateway",

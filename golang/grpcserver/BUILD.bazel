@@ -10,10 +10,7 @@ go_binary(
 
 go_library(
     name = "grpcserver_lib",
-    srcs = [
-        "main.go",
-        "server.go",
-    ],
+    srcs = ["main.go"],
     importpath = "github.com/berendjan/golang-bazel-starter/golang/grpcserver",
     visibility = ["//visibility:public"],
     deps = [
@@ -21,5 +18,9 @@ go_library(
         "//golang/config/repository",
         "//golang/framework/db",
         "//golang/framework/serverbase",
+        "//golang/generated/interfaces",
+        "//golang/grpcserver/messenger",
+        "//golang/middleware/middleone",
+        "//golang/middleware/middletwo",
     ],
 )

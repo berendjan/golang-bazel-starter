@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "interface-gen_lib",
+    srcs = [
+        "generator.go",
+        "main.go",
+        "spec.go",
+        "templates.go",
+    ],
+    importpath = "github.com/berendjan/golang-bazel-starter/tools/codegen/interface-gen",
+    visibility = ["//visibility:private"],
+    deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
+)
+
+go_binary(
+    name = "interface-gen",
+    embed = [":interface-gen_lib"],
+    visibility = ["//visibility:public"],
+)

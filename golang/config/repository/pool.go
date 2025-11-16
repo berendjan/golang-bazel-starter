@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/berendjan/golang-bazel-starter/golang/config/interfaces"
 	"github.com/berendjan/golang-bazel-starter/golang/framework/db"
+	geninterfaces "github.com/berendjan/golang-bazel-starter/golang/generated/interfaces"
 	commonpb "github.com/berendjan/golang-bazel-starter/proto/common/v1"
 	configpb "github.com/berendjan/golang-bazel-starter/proto/configuration/v1"
 )
@@ -21,11 +21,11 @@ type AccountDbRepository struct {
 	pool *db.DBPool
 }
 
-// Compile-time check that AccountDbRepository implements AccountRepository
-var _ interfaces.AccountRepository = (*AccountDbRepository)(nil)
+// Compile-time check that AccountDbRepository implements AccountRepositoryInterface
+var _ geninterfaces.AccountRepositoryInterface = (*AccountDbRepository)(nil)
 
 // dependency injection provider
-type AccountRepositoryProvider[T interfaces.AccountRepository] interface {
+type AccountRepositoryProvider[T geninterfaces.AccountRepositoryInterface] interface {
 	GetAccountRepository() T
 }
 
@@ -36,8 +36,13 @@ func NewAccountRepository(pool *db.DBPool) *AccountDbRepository {
 	}
 }
 
-// CreateAccount creates a new account and returns the account configuration
-func (r *AccountDbRepository) CreateAccount(ctx context.Context, req *configpb.AccountCreationRequestProto) (*configpb.AccountConfigurationProto, error) {
+// HandleMiddleOneRequest creates a new account and returns the account configuration
+func (r *AccountDbRepository) HandleMiddleOneRequest(ctx context.Context, req *configpb.MiddleOneRequestProto) (*configpb.AccountConfigurationProto, error) {
+	return r.handleAccountCreation(ctx, req.GetRequest())
+}
+
+// handleAccountCreation is the internal implementation
+func (r *AccountDbRepository) handleAccountCreation(ctx context.Context, req *configpb.AccountCreationRequestProto) (*configpb.AccountConfigurationProto, error) {
 	if req.GetName() == "" {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -71,8 +76,8 @@ func (r *AccountDbRepository) CreateAccount(ctx context.Context, req *configpb.A
 	return account, nil
 }
 
-// DeleteAccount deletes an account by ID and returns status response
-func (r *AccountDbRepository) DeleteAccount(ctx context.Context, req *configpb.AccountDeletionRequestProto) (*commonpb.StatusResponseProto, error) {
+// HandleAccountDeletionRequest deletes an account by ID and returns status response
+func (r *AccountDbRepository) HandleAccountDeletionRequest(ctx context.Context, req *configpb.AccountDeletionRequestProto) (*commonpb.StatusResponseProto, error) {
 	accountKey := req.GetId()
 
 	// Try to decode from base64 (HTTP gateway sends it encoded)
@@ -101,8 +106,8 @@ func (r *AccountDbRepository) DeleteAccount(ctx context.Context, req *configpb.A
 	}, nil
 }
 
-// ListAccounts retrieves all accounts ordered by creation time
-func (r *AccountDbRepository) ListAccounts(ctx context.Context, req *configpb.ListAccountsRequestProto) (*configpb.ListAccountsResponseProto, error) {
+// HandleListAccountsRequest retrieves all accounts ordered by creation time
+func (r *AccountDbRepository) HandleListAccountsRequest(ctx context.Context, req *configpb.ListAccountsRequestProto) (*configpb.ListAccountsResponseProto, error) {
 	query := `SELECT id, type, created_at, updated_at FROM accounts ORDER BY created_at DESC`
 
 	rows, err := r.pool.Query(ctx, query)

@@ -12,6 +12,10 @@ message AccountConfigurationProto {
 
 message AccountCreationRequestProto { string name = 1; }
 
+message MiddleOneRequestProto {
+  AccountCreationRequestProto request = 1;
+}
+
 message AccountDeletionRequestProto { string id = 1;}
 
 message ListAccountsRequestProto {}
