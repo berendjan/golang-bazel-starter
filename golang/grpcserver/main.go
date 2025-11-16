@@ -8,7 +8,6 @@ import (
 	"github.com/berendjan/golang-bazel-starter/golang/config/repository"
 	"github.com/berendjan/golang-bazel-starter/golang/framework/db"
 	"github.com/berendjan/golang-bazel-starter/golang/framework/serverbase"
-	geninterfaces "github.com/berendjan/golang-bazel-starter/golang/generated/interfaces"
 	"github.com/berendjan/golang-bazel-starter/golang/grpcserver/messenger"
 	"github.com/berendjan/golang-bazel-starter/golang/middleware/middleone"
 	"github.com/berendjan/golang-bazel-starter/golang/middleware/middletwo"
@@ -16,7 +15,7 @@ import (
 
 type GrpcServer struct {
 	*serverbase.ServerBase
-	accountApi *api.ConfigurationApi[geninterfaces.AccountApiSendable]
+	accountApi *api.ConfigurationApi
 	messenger  *messenger.GrpcMessenger
 }
 
@@ -28,8 +27,7 @@ func (g *GrpcServer) Register(sb *serverbase.ServerBuilder, grpcPort, httpPort i
 
 func NewGrpcServer(messenger *messenger.GrpcMessenger) *GrpcServer {
 	// Create API with messenger as the sendable interface
-	var sendable geninterfaces.AccountApiSendable = messenger
-	accountApi := api.NewConfigurationApi(&sendable)
+	accountApi := api.NewConfigurationApi(messenger)
 
 	// Create gRPC server
 	grpcServer := &GrpcServer{

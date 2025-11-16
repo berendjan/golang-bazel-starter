@@ -44,11 +44,24 @@ func New{{.Spec.MessengerName}}(
 {{range $msg := $route.Messages}}
 // Send{{$msg.Message | baseName}}From{{$handler.Name | title}} sends {{$msg.Message}} from {{$handler.Name}} to receivers
 func (m *{{$.Spec.MessengerName}}) Send{{$msg.Message | baseName}}From{{$handler.Name | title}}(ctx context.Context, message {{$msg.Message}}) {{$msg.Response}} {
-{{- range $receiver := $msg.Receivers}}
+{{- range $i, $receiver := $msg.Receivers}}
+{{- $isLast := eq $i (sub (len $msg.Receivers) 1)}}
 {{- if $.HasSendableMessages $receiver}}
+{{- if $isLast}}
 	return m.{{$receiver}}.Handle{{$msg.Message | baseName}}(ctx, message, m)
 {{- else}}
+	if err := m.{{$receiver}}.Handle{{$msg.Message | baseName}}(ctx, message, m); err != nil {
+		return nil, err
+	}
+{{- end}}
+{{- else}}
+{{- if $isLast}}
 	return m.{{$receiver}}.Handle{{$msg.Message | baseName}}(ctx, message)
+{{- else}}
+	if err := m.{{$receiver}}.Handle{{$msg.Message | baseName}}(ctx, message); err != nil {
+		return nil, err
+	}
+{{- end}}
 {{- end}}
 {{- end}}
 }

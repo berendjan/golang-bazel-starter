@@ -50,3 +50,10 @@ func (m *MiddleTwo) HandleListAccountsRequest(ctx context.Context, req *configpb
 	log.Printf("MiddleTwo: List accounts successful: %d accounts found", len(result.GetAccounts()))
 	return result, nil
 }
+
+// HandleMiddleOneRequest logs and passes through (not the last receiver)
+func (m *MiddleTwo) HandleMiddleOneRequest(ctx context.Context, message *configpb.MiddleOneRequestProto, next geninterfaces.MiddlewareTwoSendable) error {
+	log.Printf("MiddleTwo: Processing MiddleOne request in chain: %+v", message)
+	// This is not the last receiver, so just return nil to continue the chain
+	return nil
+}

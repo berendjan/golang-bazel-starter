@@ -28,10 +28,19 @@ type {{$handler.Name | title}}Sendable interface {
 type {{$handler.Name | title}}Interface interface {
 {{- range $route := $.RoutesReceivedBy $handler.Name}}
 {{- range $msg := $route.Messages}}
+{{- $isLast := $.IsLastReceiver $handler.Name $route.Source $msg.Message}}
 {{- if $hasSendable}}
+{{- if $isLast}}
 	Handle{{$msg.Message | baseName}}(ctx context.Context, message {{$msg.Message}}, next {{$handler.Name | title}}Sendable) {{$msg.Response}}
 {{- else}}
+	Handle{{$msg.Message | baseName}}(ctx context.Context, message {{$msg.Message}}, next {{$handler.Name | title}}Sendable) error
+{{- end}}
+{{- else}}
+{{- if $isLast}}
 	Handle{{$msg.Message | baseName}}(ctx context.Context, message {{$msg.Message}}) {{$msg.Response}}
+{{- else}}
+	Handle{{$msg.Message | baseName}}(ctx context.Context, message {{$msg.Message}}) error
+{{- end}}
 {{- end}}
 {{- end}}
 {{- end}}

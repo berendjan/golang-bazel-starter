@@ -17,21 +17,21 @@ import (
 )
 
 // ConfigurationApi implements the Configuration gRPC service
-type ConfigurationApi[T geninterfaces.AccountApiSendable] struct {
+type ConfigurationApi struct {
 	gw.UnimplementedConfigurationServer
 
-	accountRepo *T
+	accountRepo geninterfaces.AccountApiSendable
 }
 
 // Build creates a new Configuration service Api
-func NewConfigurationApi[T geninterfaces.AccountApiSendable](accountRepo *T) *ConfigurationApi[T] {
-	return &ConfigurationApi[T]{
+func NewConfigurationApi(accountRepo geninterfaces.AccountApiSendable) *ConfigurationApi {
+	return &ConfigurationApi{
 		accountRepo: accountRepo,
 	}
 }
 
 // CreateAccount creates a new account
-func (s *ConfigurationApi[T]) CreateAccount(
+func (s *ConfigurationApi) CreateAccount(
 	ctx context.Context,
 	req *configpb.AccountCreationRequestProto,
 ) (*configpb.AccountConfigurationProto, error) {
@@ -46,7 +46,7 @@ func (s *ConfigurationApi[T]) CreateAccount(
 	}
 
 	// Pass proto message directly to repository
-	account, err := (*s.accountRepo).SendMiddleOneRequestFromAccountApi(ctx, wrappedReq)
+	account, err := s.accountRepo.SendMiddleOneRequestFromAccountApi(ctx, wrappedReq)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create account: %v", err)
 	}
@@ -56,7 +56,7 @@ func (s *ConfigurationApi[T]) CreateAccount(
 }
 
 // DeleteAccount deletes an account
-func (s *ConfigurationApi[T]) DeleteAccount(
+func (s *ConfigurationApi) DeleteAccount(
 	ctx context.Context,
 	req *configpb.AccountDeletionRequestProto,
 ) (*commonpb.StatusResponseProto, error) {
@@ -71,7 +71,7 @@ func (s *ConfigurationApi[T]) DeleteAccount(
 	}
 
 	// Pass proto message directly to repository
-	response, err := (*s.accountRepo).SendAccountDeletionRequestFromAccountApi(ctx, req)
+	response, err := s.accountRepo.SendAccountDeletionRequestFromAccountApi(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete account: %v", err)
 	}
@@ -81,12 +81,12 @@ func (s *ConfigurationApi[T]) DeleteAccount(
 }
 
 // ListAccounts lists all accounts
-func (s *ConfigurationApi[T]) ListAccounts(
+func (s *ConfigurationApi) ListAccounts(
 	ctx context.Context,
 	req *configpb.ListAccountsRequestProto,
 ) (*configpb.ListAccountsResponseProto, error) {
 	// Pass proto message directly to repository
-	response, err := (*s.accountRepo).SendListAccountsRequestFromAccountApi(ctx, req)
+	response, err := s.accountRepo.SendListAccountsRequestFromAccountApi(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list accounts: %v", err)
 	}
@@ -95,11 +95,11 @@ func (s *ConfigurationApi[T]) ListAccounts(
 }
 
 // RegisterGRPC implements server_builder.GRPCServiceRegistrar
-func (s *ConfigurationApi[T]) RegisterGRPC(Api grpc.ServiceRegistrar) {
+func (s *ConfigurationApi) RegisterGRPC(Api grpc.ServiceRegistrar) {
 	gw.RegisterConfigurationServer(Api, s)
 }
 
 // RegisterGateway implements server_builder.HTTPGatewayRegistrar
-func (s *ConfigurationApi[T]) RegisterGateway(ctx context.Context, mux *runtime.ServeMux) error {
+func (s *ConfigurationApi) RegisterGateway(ctx context.Context, mux *runtime.ServeMux) error {
 	return gw.RegisterConfigurationHandlerServer(ctx, mux, s)
 }

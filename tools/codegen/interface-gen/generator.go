@@ -69,6 +69,22 @@ func (g *Generator) HasSendableMessages(handlerName string) bool {
 	return len(routes) > 0
 }
 
+// IsLastReceiver returns true if the handler is the last receiver for the given message from the source
+func (g *Generator) IsLastReceiver(handlerName, sourceName, messageType string) bool {
+	for _, route := range g.spec.Routes {
+		if route.Source == sourceName {
+			for _, msg := range route.Messages {
+				if msg.Message == messageType {
+					if len(msg.Receivers) > 0 {
+						return msg.Receivers[len(msg.Receivers)-1] == handlerName
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
 // Generate produces the Go interface source code
 func (g *Generator) Generate() ([]byte, error) {
 	// Create template with custom functions

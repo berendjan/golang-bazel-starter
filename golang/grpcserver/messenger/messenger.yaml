@@ -47,6 +47,7 @@ routes:
       - message: "*configpb.MiddleOneRequestProto"
         response: "(*configpb.AccountConfigurationProto, error)"
         receivers:
+          - middlewareTwo
           - accountRepository
 
   - source: middlewareTwo
