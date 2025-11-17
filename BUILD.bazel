@@ -18,6 +18,9 @@ load("@gazelle//:def.bzl", "gazelle")
 # Resolve the manual proto gateway library
 # gazelle:resolve_regexp go github.com/berendjan/golang-bazel-starter/proto/(.*)/v1/gateway //proto/$1/v1:gateway
 
+# inject environment variables into go_test
+# gazelle:map_kind go_test go_test //golang/test:test_env.bzl
+
 gazelle(
     name = "gazelle",
 )

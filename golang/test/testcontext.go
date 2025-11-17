@@ -377,6 +377,14 @@ func (tx *TestContext) GetGrpcClient(server ServerConfig) string {
 	return fmt.Sprintf("localhost:%d", serverContext.grpcPort)
 }
 
+func (tx *TestContext) GetHttpClient(server ServerConfig) string {
+	var serverContext *TestServerContext
+	if serverContext = tx.servers[server.server]; serverContext == nil {
+		panic(fmt.Sprintf("Server not registered: %s", server.server))
+	}
+	return fmt.Sprintf("http://localhost:%d", serverContext.httpPort)
+}
+
 // CleanUp tears down the test context, dropping all test databases and shutting down servers
 // Note: This does NOT terminate the shared container, which is reused across tests
 func (tc *TestContext) CleanUp(ctx context.Context) error {

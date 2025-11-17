@@ -1,18 +1,37 @@
-package client
+package test_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/berendjan/golang-bazel-starter/golang/test"
 )
 
-const httpBaseURL = "http://localhost:26000"
+// HTTP Tests using TestContext
 
-// TestHTTPCreateAccount tests creating an account via HTTP gateway
 func TestHTTPCreateAccount(t *testing.T) {
+	ctx := context.Background()
+
+	tc, err := test.NewTestContextBuilder().
+		WithDatabase(test.ConfigDb).
+		WithServer(test.GrpcServer).
+		Build(ctx)
+	if err != nil {
+		t.Fatalf("Failed to create test context: %v", err)
+	}
+	defer func() {
+		if err := tc.CleanUp(ctx); err != nil {
+			t.Logf("Warning: cleanup failed: %v", err)
+		}
+	}()
+
+	httpBaseURL := tc.GetHttpClient(test.GrpcServer)
+
 	reqBody := map[string]string{
 		"name": "http-test-account",
 	}
@@ -64,8 +83,24 @@ func TestHTTPCreateAccount(t *testing.T) {
 	}
 }
 
-// TestHTTPListAccounts tests listing accounts via HTTP gateway
 func TestHTTPListAccounts(t *testing.T) {
+	ctx := context.Background()
+
+	tc, err := test.NewTestContextBuilder().
+		WithDatabase(test.ConfigDb).
+		WithServer(test.GrpcServer).
+		Build(ctx)
+	if err != nil {
+		t.Fatalf("Failed to create test context: %v", err)
+	}
+	defer func() {
+		if err := tc.CleanUp(ctx); err != nil {
+			t.Logf("Warning: cleanup failed: %v", err)
+		}
+	}()
+
+	httpBaseURL := tc.GetHttpClient(test.GrpcServer)
+
 	// Create a test account first
 	reqBody := map[string]string{
 		"name": "http-list-test-account",
@@ -127,8 +162,24 @@ func TestHTTPListAccounts(t *testing.T) {
 	t.Logf("Found %d accounts via HTTP", len(accounts))
 }
 
-// TestHTTPDeleteAccount tests deleting an account via HTTP gateway
 func TestHTTPDeleteAccount(t *testing.T) {
+	ctx := context.Background()
+
+	tc, err := test.NewTestContextBuilder().
+		WithDatabase(test.ConfigDb).
+		WithServer(test.GrpcServer).
+		Build(ctx)
+	if err != nil {
+		t.Fatalf("Failed to create test context: %v", err)
+	}
+	defer func() {
+		if err := tc.CleanUp(ctx); err != nil {
+			t.Logf("Warning: cleanup failed: %v", err)
+		}
+	}()
+
+	httpBaseURL := tc.GetHttpClient(test.GrpcServer)
+
 	// Create account first
 	reqBody := map[string]string{
 		"name": "http-delete-test-account",
@@ -179,8 +230,24 @@ func TestHTTPDeleteAccount(t *testing.T) {
 	t.Logf("Delete status via HTTP: %s (code: %.0f)", result["message"], code)
 }
 
-// TestHTTPAccountLifecycle tests the complete lifecycle via HTTP gateway
 func TestHTTPAccountLifecycle(t *testing.T) {
+	ctx := context.Background()
+
+	tc, err := test.NewTestContextBuilder().
+		WithDatabase(test.ConfigDb).
+		WithServer(test.GrpcServer).
+		Build(ctx)
+	if err != nil {
+		t.Fatalf("Failed to create test context: %v", err)
+	}
+	defer func() {
+		if err := tc.CleanUp(ctx); err != nil {
+			t.Logf("Warning: cleanup failed: %v", err)
+		}
+	}()
+
+	httpBaseURL := tc.GetHttpClient(test.GrpcServer)
+
 	// 1. List initial accounts
 	initialResp, err := http.Get(httpBaseURL + "/v1/accounts")
 	if err != nil {
@@ -263,4 +330,84 @@ func TestHTTPAccountLifecycle(t *testing.T) {
 	}
 
 	t.Log("HTTP account lifecycle test completed successfully")
+}
+
+func TestHTTPDeleteAccountNotFound(t *testing.T) {
+	ctx := context.Background()
+
+	tc, err := test.NewTestContextBuilder().
+		WithDatabase(test.ConfigDb).
+		WithServer(test.GrpcServer).
+		Build(ctx)
+	if err != nil {
+		t.Fatalf("Failed to create test context: %v", err)
+	}
+	defer func() {
+		if err := tc.CleanUp(ctx); err != nil {
+			t.Logf("Warning: cleanup failed: %v", err)
+		}
+	}()
+
+	httpBaseURL := tc.GetHttpClient(test.GrpcServer)
+
+	// Try to delete a non-existent account
+	deleteReq, _ := http.NewRequest(
+		http.MethodDelete,
+		fmt.Sprintf("%s/v1/accounts/%s", httpBaseURL, "non-existent-account"),
+		nil,
+	)
+	deleteResp, err := http.DefaultClient.Do(deleteReq)
+	if err != nil {
+		t.Fatalf("Failed to send delete request: %v", err)
+	}
+	defer deleteResp.Body.Close()
+
+	// Should get a non-200 status code
+	if deleteResp.StatusCode == http.StatusOK {
+		t.Fatal("Expected error status when deleting non-existent account")
+	}
+
+	t.Logf("Got expected error status: %d", deleteResp.StatusCode)
+}
+
+func TestHTTPCreateAccountValidation(t *testing.T) {
+	ctx := context.Background()
+
+	tc, err := test.NewTestContextBuilder().
+		WithDatabase(test.ConfigDb).
+		WithServer(test.GrpcServer).
+		Build(ctx)
+	if err != nil {
+		t.Fatalf("Failed to create test context: %v", err)
+	}
+	defer func() {
+		if err := tc.CleanUp(ctx); err != nil {
+			t.Logf("Warning: cleanup failed: %v", err)
+		}
+	}()
+
+	httpBaseURL := tc.GetHttpClient(test.GrpcServer)
+
+	// Try to create account with empty name
+	reqBody := map[string]string{
+		"name": "",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+
+	resp, err := http.Post(
+		httpBaseURL+"/v1/accounts",
+		"application/json",
+		bytes.NewBuffer(bodyBytes),
+	)
+	if err != nil {
+		t.Fatalf("Failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Should get a non-200 status code for validation error
+	if resp.StatusCode == http.StatusOK {
+		t.Fatal("Expected error status when creating account with empty name")
+	}
+
+	t.Logf("Got expected validation error status: %d", resp.StatusCode)
 }

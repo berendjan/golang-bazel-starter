@@ -1,12 +1,13 @@
 load("@rules_go//go:def.bzl", "go_library")
 load(":test_env.bzl", "go_test")
 
-# gazelle:map_kind go_test go_test //golang/test:test_env.bzl
-
 go_test(
     name = "test_test",
     testonly = True,
-    srcs = ["testcontextbuilder_test.go"],
+    srcs = [
+        "grpcserver_test.go",
+        "grpcserverhttp_test.go",
+    ],
     deps = [
         ":test",
         "//golang/config/client",
