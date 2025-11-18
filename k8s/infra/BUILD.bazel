@@ -1,0 +1,6 @@
+genrule(
+    name = "cat",
+    outs = ["cat.sh"],
+    cmd = "echo 'cat $$1' > $@",
+    visibility = ["//k8s/app:__subpackages__"],
+)

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{name}}"
+  namespace: "{{namespace}}"
+  labels:
+    app.kubernetes.io/name: "{{name}}"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "{{name}}"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "{{name}}"
+    spec:
+      shareProcessNamespace: true # so we can attach a debugger
+      serviceAccountName: "{{namespace}}"
+      containers:
+      - name: "{{name}}"
+        image: "{{name}}:container"
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: environment-volume
+          mountPath: "/environment"
+          readOnly: true
+        - name: 'database-credentials'
+          mountPath: '/mnt/database-credentials/application'
+          readOnly: true
+        - name: "cert-volume"
+          mountPath: '/mnt/rootline-cert'
+          readOnly: true
+        - name: empty-dir
+          mountPath: /tmp
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m # Min
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+      volumes:
+      - name: environment-volume
+        configMap:
+          name: environment
+      - name: empty-dir
+        emptyDir: {}

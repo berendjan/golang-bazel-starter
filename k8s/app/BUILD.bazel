@@ -1,0 +1,28 @@
+load("//k8s/infra:k8s.bzl", "create_substitutions", "deploy_targets", "target")
+
+EXTRA_FILES = glob(["common/deployment/**/*.yaml"])
+
+TARGETS = [
+    target(
+        name = "namespace",
+        dir = "common/namespace",
+        sync_group = "namespaces",
+    ),
+    target(
+        name = "environment",
+        dir = "common/environment",
+        sync_group = "infra",
+    ),
+    target(
+        name = "grpcserver",
+        dir = "grpcserver",
+        extra_files = EXTRA_FILES,
+        substitutions = create_substitutions("grpcserver", "app-namespace"),
+        sync_group = "apps",
+    ),
+]
+
+deploy_targets(
+    name = "name",
+    targets = TARGETS,
+)

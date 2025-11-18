@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: environment
+  namespace: app-namespace
+data:
+  environment: "{{cluster_env}}"

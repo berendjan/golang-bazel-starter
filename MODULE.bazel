@@ -8,6 +8,17 @@ bazel_dep(name = "googleapis-go", version = "1.0.0")
 bazel_dep(name = "rules_proto_grpc_grpc_gateway", version = "5.8.0")
 bazel_dep(name = "grpc_ecosystem_grpc_gateway", version = "2.27.3")
 
+# k8s
+bazel_dep(name = "rules_kustomize", version = "0.5.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+
+kustomize = use_extension("@rules_kustomize//kustomize:extensions.bzl", "kustomize")
+kustomize.download(version = "v5.7.1")
+
+helm = use_extension("@rules_kustomize//kustomize:extensions.bzl", "helm")
+helm.download(version = "v3.19.0")
+
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
 go_sdk.download(version = "1.25.4")
 

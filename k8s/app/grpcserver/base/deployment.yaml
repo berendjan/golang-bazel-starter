@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{name}}"
+  namespace: "{{namespace}}"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        my-custom-label: label-value
+    spec:
+      containers:
+        - name: "{{name}}"
+          image: "{{name}}:container"
+          imagePullPolicy: IfNotPresent
+          ports:
+          - name: grpc-port
+            containerPort: 25000
+          - name: http-port
+            containerPort: 26000
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http-port
+              scheme: HTTPS
+            failureThreshold: 120
+            periodSeconds: 1
+            timeoutSeconds: 5
+            successThreshold: 1
