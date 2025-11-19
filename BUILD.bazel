@@ -21,6 +21,9 @@ load("@gazelle//:def.bzl", "gazelle")
 # inject environment variables into go_test
 # gazelle:map_kind go_test go_test //golang/test:test_env.bzl
 
+# inject extra bazel targets into go_binary
+# gazelle:map_kind go_binary go_binary //k8s/infra:server.bzl
+
 gazelle(
     name = "gazelle",
 )

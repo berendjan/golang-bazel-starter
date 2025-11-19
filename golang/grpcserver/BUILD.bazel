@@ -1,13 +1,8 @@
+load("//k8s/infra:server.bzl", "go_binary")
+
 ### GENERATED FILE ### DO NOT EDIT ###
 
-load("@rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
-
-go_cross_binary(
-    name = "grpcserver_cross",
-    compilation_mode = "opt",
-    platform = "@rules_go//go/toolchain:linux_amd64",
-    target = ":grpcserver",
-)
+load("@rules_go//go:def.bzl", "go_library")
 
 go_binary(
     name = "grpcserver",

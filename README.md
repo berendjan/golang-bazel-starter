@@ -354,15 +354,85 @@ bazel build -c opt //golang/grpcserver:grpcserver
 ./bazel-bin/golang/grpcserver/grpcserver_/grpcserver
 ```
 
-### Docker
+### Container Images
+
+The project includes Bazel rules for building and pushing OCI container images.
+
+#### Prerequisites
+
+Start a local Docker registry (v3) on port 5001:
 
 ```bash
-# Build container
+# Start a local registry (runs on localhost:5001)
+docker run -d -p 5001:5000 --name registry registry:3
+
+# Verify it's running
+curl http://localhost:5001/v2/_catalog
+```
+
+#### Building Images
+
+```bash
+# Build the container image
 bazel build //golang/grpcserver:grpcserver_image
 
-# Run container
-bazel run //golang/grpcserver:grpcserver_image
+# Build cross-compiled binary for Linux
+bazel build //golang/grpcserver:grpcserver_cross
 ```
+
+#### Pushing Images
+
+```bash
+# Push image to local registry (both sha256 tag and latest tag)
+bazel run //golang/grpcserver:grpcserver_push
+
+# Push only sha256 tag
+bazel run //golang/grpcserver:grpcserver_localhost_push_sha256_tag
+
+# Push only latest tag
+bazel run //golang/grpcserver:grpcserver_localhost_push_latest_tag
+```
+
+#### Verifying Pushed Images
+
+```bash
+# List all repositories in registry
+curl http://localhost:5001/v2/_catalog
+
+# List tags for specific image
+curl http://localhost:5001/v2/grpcserver/tags/list
+
+# Get image manifest
+curl http://localhost:5001/v2/grpcserver/manifests/latest
+```
+
+#### Running Docker Images Locally
+
+```bash
+# Pull and run from local registry
+docker run --rm -p 25000:25000 -p 26000:26000 localhost:5001/grpcserver:latest
+
+# Or run with specific tag
+docker run --rm -p 25000:25000 -p 26000:26000 localhost:5001/grpcserver:<sha256-tag>
+
+# Run in detached mode
+docker run -d -p 25000:25000 -p 26000:26000 --name grpcserver localhost:5001/grpcserver:latest
+
+# View logs
+docker logs grpcserver
+
+# Stop and remove
+docker stop grpcserver && docker rm grpcserver
+```
+
+#### Image Build Details
+
+The `go_binary` macro in `k8s/infra/server.bzl` automatically:
+1. Builds the Go binary
+2. Cross-compiles for Linux AMD64
+3. Packages into a distroless base image
+4. Exposes ports 25000 (gRPC) and 26000 (HTTP)
+5. Creates push targets with both sha256 and latest tags
 
 ## Customization
 

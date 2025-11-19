@@ -1,5 +1,5 @@
 # auto add latest tag
-load("@rules_multirun//:defs.bzl", "command", "multirun")
+load("@rules_multirun//:defs.bzl", "multirun")
 
 # OCI Image Rules
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push")
@@ -41,7 +41,7 @@ build_sha265_tag = rule(
     },
 )
 
-def image(name, srcs, base, entrypoint, exposed_ports = []):
+def image(name, srcs, base, entrypoint, exposed_ports = [], repositories = ["localhost:5001"]):
     """
     Builds and publishes an OCI image for a given binary.
 
@@ -51,6 +51,7 @@ def image(name, srcs, base, entrypoint, exposed_ports = []):
         base: Base image to use for the OCI image.
         entrypoint: List specifying the entrypoint command for the container.
         exposed_ports: Optional list of ports to expose from the container.
+        repositories: urls of repositories to push images to
 
     This macro:
       1. Packages the binary into a tar layer.
@@ -60,7 +61,7 @@ def image(name, srcs, base, entrypoint, exposed_ports = []):
       5. Provides a multirun target to push both tags in one command.
     """
 
-    # 1) Compress the Rust binary to tar
+    # 1) Compress the binary to tar
     pkg_tar(
         name = "{}_tar".format(name),
         srcs = srcs,
@@ -85,27 +86,34 @@ def image(name, srcs, base, entrypoint, exposed_ports = []):
         output = "_tag.txt",
     )
 
-    # 4) Define a registry to publish the image
-    # https://github.com/bazel-contrib/rules_oci/blob/main/docs/push.md)
-    oci_push(
-        name = "{}_push_sha256_tag".format(name),
-        image = "{}_image".format(name),
-        remote_tags = "{}_remote_tag".format(name),
-        repository = "localhost:5001/{}".format(name),
-        visibility = ["//visibility:public"],
-    )
+    names = []
 
-    # 4) Define a registry to publish the image with latest tag
-    # https://github.com/bazel-contrib/rules_oci/blob/main/docs/push.md)
-    oci_push(
-        name = "{}_push_latest_tag".format(name),
-        image = "{}_image".format(name),
-        remote_tags = ["latest"],
-        repository = "localhost:5001/{}".format(name),
-        visibility = ["//visibility:public"],
-    )
+    for repo in repositories:
+        repo_name = repo.split(":")[0]
+
+        # 4) Define a registry to publish the image
+        # https://github.com/bazel-contrib/rules_oci/blob/main/docs/push.md)
+        oci_push(
+            name = "{}_{}_push_sha256_tag".format(name, repo_name),
+            image = "{}_image".format(name),
+            remote_tags = "{}_remote_tag".format(name),
+            repository = "{}/{}".format(repo, name),
+            visibility = ["//visibility:public"],
+        )
+        names.append("{}_{}_push_sha256_tag".format(name, repo_name))
+
+        # 4) Define a registry to publish the image with latest tag
+        # https://github.com/bazel-contrib/rules_oci/blob/main/docs/push.md)
+        oci_push(
+            name = "{}_{}_push_latest_tag".format(name, repo_name),
+            image = "{}_image".format(name),
+            remote_tags = ["latest"],
+            repository = "{}/{}".format(repo, name),
+            visibility = ["//visibility:public"],
+        )
+        names.append("{}_{}_push_latest_tag".format(name, repo_name))
 
     multirun(
         name = "{}_push".format(name),
-        commands = ["{}_push_sha256_tag".format(name), "{}_push_latest_tag".format(name)],
+        commands = names,
     )
