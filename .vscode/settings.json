@@ -1,6 +1,6 @@
 {
     "go.toolsEnvVars": {
-        "GOPACKAGESDRIVER": "${workspaceFolder}/tools/gopackagesdriver.sh"
+        "GOPACKAGESDRIVER": "${workspaceFolder}/golang/tools/gopackagesdriver.sh"
     },
     "gopls": {
         "build.workspaceFiles": [

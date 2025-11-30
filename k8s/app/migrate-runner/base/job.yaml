@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-runner
+  namespace: app-namespace
+spec:
+  # Keep completed jobs for debugging
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: migrate-runner
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: migrate-runner
+      containers:
+      - name: migrate-runner
+        image: migrate-runner
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: client-certs
+          mountPath: /mnt/client-certs
+          readOnly: true
+        - name: postgres-ca
+          mountPath: /mnt/postgres-ca
+          readOnly: true
+        - name: empty-dir
+          mountPath: /tmp
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+      volumes:
+      - name: client-certs
+        secret:
+          secretName: migrate-runner-tls
+      - name: postgres-ca
+        configMap:
+          name: postgres-ca-bundle
+      - name: empty-dir
+        emptyDir: {}

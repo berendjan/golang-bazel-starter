@@ -9,7 +9,7 @@ go_library(
         "spec.go",
         "templates.go",
     ],
-    importpath = "github.com/berendjan/golang-bazel-starter/tools/codegen/messenger-gen",
+    importpath = "github.com/berendjan/golang-bazel-starter/golang/tools/codegen/messenger-gen",
     visibility = ["//visibility:private"],
     deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
 )

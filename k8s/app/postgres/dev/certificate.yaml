@@ -1,0 +1,51 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-server-tls
+  namespace: app-namespace
+spec:
+  secretName: postgres-server-tls
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days before expiry
+  subject:
+    organizations:
+      - dev-cluster
+  commonName: app-postgres-rw.app-namespace.svc.cluster.local
+  dnsNames:
+    - app-postgres-rw
+    - app-postgres-rw.app-namespace
+    - app-postgres-rw.app-namespace.svc
+    - app-postgres-rw.app-namespace.svc.cluster.local
+    - app-postgres-r
+    - app-postgres-r.app-namespace
+    - app-postgres-r.app-namespace.svc
+    - app-postgres-r.app-namespace.svc.cluster.local
+    - app-postgres-ro
+    - app-postgres-ro.app-namespace
+    - app-postgres-ro.app-namespace.svc
+    - app-postgres-ro.app-namespace.svc.cluster.local
+  usages:
+    - server auth
+    - client auth  # For replication
+  issuerRef:
+    name: postgres-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: migrate-runner-tls
+  namespace: app-namespace
+spec:
+  secretName: migrate-runner-tls
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days before expiry
+  subject:
+    organizations:
+      - dev-cluster
+  commonName: migrate-runner
+  usages:
+    - client auth
+  issuerRef:
+    name: migrate-runner-ca-issuer
+    kind: ClusterIssuer

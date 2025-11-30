@@ -33,6 +33,13 @@ fi
 echo "✓ Registry is accessible"
 echo ""
 
+# Build and push migrate-runner
+echo "Building and pushing migrate-runner..."
+echo "-----------------------------------"
+bazel run //golang/migrate-runner:migrate-runner_push
+
+echo ""
+
 # Build and push grpcserver
 echo "Building and pushing grpcserver..."
 echo "-----------------------------------"
@@ -45,6 +52,19 @@ echo "-----------------------------------"
 # List all images in registry
 echo "Images in registry:"
 curl -s http://${REGISTRY_URL}/v2/_catalog | jq '.'
+
+echo ""
+
+# Check migrate-runner specifically
+if curl -s http://${REGISTRY_URL}/v2/_catalog | grep -q migrate-runner; then
+    echo "✓ migrate-runner image pushed successfully"
+    echo ""
+    echo "Tags for migrate-runner:"
+    curl -s http://${REGISTRY_URL}/v2/migrate-runner/tags/list | jq '.'
+else
+    echo "✗ migrate-runner image not found in registry"
+    exit 1
+fi
 
 echo ""
 

@@ -81,3 +81,30 @@ metadata:
 spec:
   ca:
     secretName: postgres-ca-secret
+
+---
+# Migrate Runner CA
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: migrate-runner-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: migrate-runner-ca
+  secretName: migrate-runner-ca-secret
+  duration: 87600h # 10 years
+  privateKey:
+    algorithm: RSA
+    size: 4096
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: migrate-runner-ca-issuer
+spec:
+  ca:
+    secretName: migrate-runner-ca-secret

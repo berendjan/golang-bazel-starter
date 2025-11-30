@@ -70,7 +70,16 @@ echo "-----------------------------------"
 "${SCRIPT_DIR}/push-images.sh"
 
 echo ""
-echo "Step 6: Deploying applications (grpcserver)..."
+echo "Step 6: Running database migrations..."
+echo "-----------------------------------"
+bazel run //k8s/app:apply-dev-migrations
+
+echo ""
+echo "Waiting for migrations to complete..."
+kubectl wait --for=condition=complete --timeout=180s job/migrate-runner -n app-namespace
+
+echo ""
+echo "Step 7: Deploying applications (grpcserver)..."
 echo "-----------------------------------"
 bazel run //k8s/app:apply-dev-apps
 

@@ -6,6 +6,8 @@ go_library(
     embedsrcs = [
         "migrations/000001_create_accounts_table.down.sql",
         "migrations/000001_create_accounts_table.up.sql",
+        "migrations/000002_create_grpcserver_user.down.sql",
+        "migrations/000002_create_grpcserver_user.up.sql",
     ],
     importpath = "github.com/berendjan/golang-bazel-starter/golang/config/db",
     visibility = ["//visibility:public"],

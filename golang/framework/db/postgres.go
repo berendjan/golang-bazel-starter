@@ -18,6 +18,11 @@ type Config struct {
 	Database string
 	SSLMode  string
 
+	// SSL Certificate paths
+	SSLCert     string // Path to client certificate
+	SSLKey      string // Path to client private key
+	SSLRootCert string // Path to CA certificate
+
 	// Connection pool settings
 	MaxConns          int32
 	MinConns          int32
@@ -29,12 +34,15 @@ type Config struct {
 // DefaultConfig returns default database configuration
 func DefaultConfig(dbName string) *Config {
 	return &Config{
-		Host:              "localhost",
+		Host:              "app-postgres-rw.app-namespace.svc.cluster.local",
 		Port:              5432,
-		User:              "postgres",
-		Password:          "postgres",
+		User:              "grpcserver",
+		Password:          "", // Not used with certificate authentication
 		Database:          dbName,
-		SSLMode:           "disable",
+		SSLMode:           "verify-full",
+		SSLCert:           "/mnt/client-certs/tls.crt",
+		SSLKey:            "/mnt/client-certs/tls.key",
+		SSLRootCert:       "/mnt/postgres-ca/ca-bundle.crt",
 		MaxConns:          25,
 		MinConns:          5,
 		MaxConnLifetime:   time.Hour,
@@ -50,10 +58,26 @@ type DBPool struct {
 
 // ConnectionString builds a PostgreSQL connection string from the config
 func (c *Config) ConnectionString() string {
-	return fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode,
-	)
+	var connStr string
+
+	// When using SSL certificate authentication, omit the password
+	if c.SSLCert != "" {
+		connStr = fmt.Sprintf(
+			"host=%s port=%d user=%s dbname=%s sslmode=%s",
+			c.Host, c.Port, c.User, c.Database, c.SSLMode,
+		)
+		connStr += fmt.Sprintf(" sslcert=%s", c.SSLCert)
+		connStr += fmt.Sprintf(" sslkey=%s", c.SSLKey)
+		connStr += fmt.Sprintf(" sslrootcert=%s", c.SSLRootCert)
+	} else {
+		// Traditional password authentication
+		connStr = fmt.Sprintf(
+			"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+			c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode,
+		)
+	}
+
+	return connStr
 }
 
 // NewPool creates a new PostgreSQL connection pool

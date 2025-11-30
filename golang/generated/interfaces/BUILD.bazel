@@ -6,8 +6,8 @@ genrule(
     name = "generate_interfaces",
     srcs = ["//golang/generated:routing.yaml"],
     outs = ["generated_interfaces.go"],
-    cmd = "$(location //tools/codegen/interface-gen:interface-gen) -spec $(SRCS) -output $@",
-    tools = ["//tools/codegen/interface-gen"],
+    cmd = "$(location //golang/tools/codegen/interface-gen:interface-gen) -spec $(SRCS) -output $@",
+    tools = ["//golang/tools/codegen/interface-gen"],
     visibility = ["//visibility:public"],
 )
 

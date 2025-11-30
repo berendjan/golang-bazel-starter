@@ -79,8 +79,8 @@ genrule(
     name = "generate_messenger",
     srcs = ["messenger.yaml"],
     outs = ["generated_messenger.go"],
-    cmd = "$(location //tools/codegen/messenger-gen) -input=$(location messenger.yaml) -output=$@",
-    tools = ["//tools/codegen/messenger-gen"],
+    cmd = "$(location //golang/tools/codegen/messenger-gen) -input=$(location messenger.yaml) -output=$@",
+    tools = ["//golang/tools/codegen/messenger-gen"],
 )
 
 go_library(

@@ -56,6 +56,11 @@ TARGETS = [
         sync_group = "infra",
     ),
     target(
+        name = "migrate-runner",
+        dir = "migrate-runner",
+        sync_group = "migrations",
+    ),
+    target(
         name = "grpcserver",
         dir = "grpcserver",
         extra_files = EXTRA_FILES,
