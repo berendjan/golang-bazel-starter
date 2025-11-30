@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: "{{name}}"
-          image: "{{name}}:container"
+          image: "grpcserver"
           imagePullPolicy: IfNotPresent
           ports:
           - name: grpc-port

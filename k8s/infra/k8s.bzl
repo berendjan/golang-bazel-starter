@@ -3,9 +3,8 @@ Defines the k8s targets.
 """
 
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
-
-# load("@rules_k8s//k8s:objects.bzl", "k8s_objects")
 load("@rules_kustomize//kustomize:kustomize.bzl", "kustomization", "kustomized_resources")
+load("@rules_multirun//:defs.bzl", "multirun")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 def create_substitutions(name, namespace):
@@ -37,7 +36,7 @@ def target(name, dir, images = [], enable_helm = False, extra_files = [], substi
         "sync_group": sync_group,
     }
 
-def cluster(name, environment, path, url):
+def cluster(name, environment, path, url, context):
     """
     Defines a cluster configuration for Kubernetes deployments.
 
@@ -46,6 +45,7 @@ def cluster(name, environment, path, url):
         environment: The environment type (e.g., dev, staging, production).
         path: The path or directory associated with the cluster's configuration.
         url: The service URL or domain for the cluster.
+        context: The k8s context
 
     Returns:
         A dictionary containing the cluster's configuration.
@@ -55,6 +55,7 @@ def cluster(name, environment, path, url):
         "environment": environment,
         "path": path,
         "url": url,
+        "context": context,
     }
 
 CLUSTERS = [
@@ -63,19 +64,22 @@ CLUSTERS = [
         environment = "dev",
         path = "",
         url = "",
+        context = "kind-dev",
     ),
     cluster(
         name = "prod-eu-west-1",
         environment = "prod",
         path = "eu-west/1",
         url = "",
+        context = "",
     ),
-    cluster(
-        name = "staging-eu-west-1",
-        environment = "staging",
-        path = "eu-west/1",
-        url = "",
-    ),
+    # cluster(
+    #     name = "staging-eu-west-1",
+    #     environment = "staging",
+    #     path = "eu-west/1",
+    #     url = "",
+    #     context = "",
+    # ),
 ]
 
 def deploy_targets(name, targets, dir_prefix = ""):
@@ -90,15 +94,27 @@ def deploy_targets(name, targets, dir_prefix = ""):
         Returns the targets.
     """
 
+    # Collect print and apply targets by (cluster_name, sync_group)
+    print_multirun_groups = {}
+    apply_multirun_groups = {}
+
     # print(targets)
     # print(CLUSTERS)
     for target in targets:
+        sync_group = target["sync_group"]
+
         for cluster in CLUSTERS:
             resource_file = get_k8s_resource_file(target["dir"], cluster["path"], cluster["environment"], dir_prefix)
 
             # print("resource file {}".format(resource_file))
             if resource_file == None:
                 continue
+
+            # Create composite key for grouping by cluster and sync_group
+            group_key = (cluster["name"], sync_group)
+            if group_key not in print_multirun_groups:
+                print_multirun_groups[group_key] = []
+                apply_multirun_groups[group_key] = []
 
             # Reflects the kustomization.yaml file
             kustomization(
@@ -133,11 +149,43 @@ def deploy_targets(name, targets, dir_prefix = ""):
                 template = ":%s-%s-kustomized-resource" % (target["name"], cluster["name"]),
             )
 
+            # Print target - just outputs YAML
+            print_target_name = "%s-%s-print" % (target["name"], cluster["name"])
             sh_binary(
-                name = "%s-%s-print" % (target["name"], cluster["name"]),
+                name = print_target_name,
                 srcs = ["//k8s/infra:cat"],
                 data = [":%s" % expanded_name],
                 args = ["k8s/app/%s" % expanded_name],
+            )
+
+            # Apply target - pipes YAML to kubectl apply
+            apply_target_name = "%s-%s-apply" % (target["name"], cluster["name"])
+            sh_binary(
+                name = apply_target_name,
+                srcs = ["//k8s/infra:kubectl-apply"],
+                data = [":%s" % expanded_name],
+                args = ["k8s/app/%s" % expanded_name, cluster["context"]],
+            )
+
+            # Add to multirun groups
+            print_multirun_groups[group_key].append(":%s" % print_target_name)
+            apply_multirun_groups[group_key].append(":%s" % apply_target_name)
+
+    # Create multirun targets for each (cluster, sync_group) combination
+    for (cluster_name, sync_group), print_targets in print_multirun_groups.items():
+        if len(print_targets) > 0:
+            multirun(
+                name = "print-%s-%s" % (cluster_name, sync_group),
+                commands = print_targets,
+                visibility = ["//visibility:public"],
+            )
+
+    for (cluster_name, sync_group), apply_targets in apply_multirun_groups.items():
+        if len(apply_targets) > 0:
+            multirun(
+                name = "apply-%s-%s" % (cluster_name, sync_group),
+                commands = apply_targets,
+                visibility = ["//visibility:public"],
             )
 
 def get_k8s_resource_file(dir, cluster_path, environment, dir_prefix = ""):

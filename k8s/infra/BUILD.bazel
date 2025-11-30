@@ -1,6 +1,21 @@
 genrule(
     name = "cat",
     outs = ["cat.sh"],
-    cmd = "echo 'cat $$1' > $@",
+    cmd = "echo '#!/bin/bash' > $@ && echo 'cat $$1' >> $@",
+    visibility = ["//k8s/app:__subpackages__"],
+)
+
+genrule(
+    name = "kubectl-apply",
+    outs = ["kubectl-apply.sh"],
+    cmd = """
+cat > $@ << 'EOF'
+#!/bin/bash
+set -e
+YAML_FILE=$$1
+CLUSTER_NAME=$$2
+cat $$YAML_FILE | kubectl apply --server-side --context $$CLUSTER_NAME -f -
+EOF
+""",
     visibility = ["//k8s/app:__subpackages__"],
 )

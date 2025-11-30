@@ -10,6 +10,30 @@ This is a production-ready Go + Bazel template featuring:
 - PostgreSQL with database migrations
 - Testcontainers for integration testing
 - Compile-time validation of routing configuration
+- Kubernetes manifests with Kustomize
+
+## Project Structure
+
+**IMPORTANT**: Kubernetes manifests MUST be created in `k8s/app/` directory, NOT in `dev/` or other locations.
+
+```
+k8s/
+├── app/                    # All k8s application manifests go here
+│   ├── grpcserver/        # Example service
+│   │   ├── base/          # Base kustomization
+│   │   └── kustomization.yaml
+│   ├── registry/          # Container registry
+│   │   ├── base/
+│   │   └── kustomization.yaml
+│   └── common/            # Shared resources
+│       ├── namespace/
+│       ├── deployment/
+│       └── environment/
+└── infra/                 # Bazel rules for k8s
+    ├── image.bzl
+    ├── server.bzl
+    └── k8s.bzl
+```
 
 ## Critical Rules
 
@@ -338,7 +362,163 @@ cat bazel-bin/golang/grpcserver/messenger/generated_messenger.go
 - Never edit BUILD files manually
 - Always use: `bazel run //:gazelle`
 
-### 12. Architecture Principles
+### 12. Container Image Infrastructure (`k8s/infra`)
+
+The project includes custom Bazel rules for building and deploying container images.
+
+#### Key Files
+
+**`k8s/infra/image.bzl`**:
+- `image()` macro - Builds OCI images with automatic tagging
+- `build_sha265_tag` rule - Extracts 7-character sha256 tag from image digest
+- Automatically creates push targets for multiple repositories
+
+**`k8s/infra/server.bzl`**:
+- `go_binary()` wrapper macro - Extends standard go_binary with containerization
+- Automatically cross-compiles for Linux AMD64
+- Creates image with distroless base
+- Exposes ports 25000 (gRPC) and 26000 (HTTP)
+
+**`k8s/infra/k8s.bzl`**:
+- `deploy_targets()` - Generates k8s manifests for multiple clusters
+- `target()` - Defines a deployment target configuration
+- `cluster()` - Defines cluster configurations (dev, staging, prod)
+- Integrates with Kustomize for overlay management
+
+#### Local Registry Setup
+
+**IMPORTANT**: You need a local Docker registry (v3) running on port 5001:
+
+```bash
+# Start local registry
+docker run -d -p 5001:5000 --name registry registry:3
+
+# Verify it's running
+curl http://localhost:5001/v2/_catalog
+```
+
+#### How the `go_binary` Macro Works
+
+When you use the `go_binary` macro from `k8s/infra/server.bzl`:
+
+```go
+load("//k8s/infra:server.bzl", "go_binary")
+
+go_binary(
+    name = "grpcserver",
+    embed = [":grpcserver_lib"],
+    visibility = ["//visibility:public"],
+)
+```
+
+It automatically creates these targets:
+
+1. **`grpcserver`** - Standard Go binary
+2. **`grpcserver_cross`** - Cross-compiled Linux AMD64 binary
+3. **`grpcserver_tar`** - Tarball of the cross-compiled binary
+4. **`grpcserver_image`** - OCI image with distroless base
+5. **`grpcserver_remote_tag`** - File containing 7-char sha256 tag
+6. **`grpcserver_localhost_push_sha256_tag`** - Push with sha256 tag
+7. **`grpcserver_localhost_push_latest_tag`** - Push with latest tag
+8. **`grpcserver_push`** - Push both tags (multirun)
+
+#### Building and Pushing Images
+
+```bash
+# Build the image
+bazel build //golang/grpcserver:grpcserver_image
+
+# Push to local registry (both sha256 and latest tags)
+bazel run //golang/grpcserver:grpcserver_push
+
+# Push only specific tag
+bazel run //golang/grpcserver:grpcserver_localhost_push_sha256_tag
+bazel run //golang/grpcserver:grpcserver_localhost_push_latest_tag
+```
+
+#### Verifying Images
+
+```bash
+# List all images in registry
+curl http://localhost:5001/v2/_catalog
+
+# List tags for specific image
+curl http://localhost:5001/v2/grpcserver/tags/list
+
+# Expected output:
+# {"name":"grpcserver","tags":["latest","a1b2c3d"]}
+
+# Get image manifest
+curl http://localhost:5001/v2/grpcserver/manifests/latest
+```
+
+#### Image Customization
+
+To customize the image for a new service:
+
+1. **Use the `go_binary` macro** in your BUILD file:
+   ```python
+   load("//k8s/infra:server.bzl", "go_binary")
+
+   go_binary(
+       name = "myservice",
+       embed = [":myservice_lib"],
+       visibility = ["//visibility:public"],
+   )
+   ```
+
+2. **Push to multiple registries** by modifying the `repositories` parameter in `k8s/infra/image.bzl`:
+   ```python
+   image(
+       name = name,
+       srcs = [":%s" % cross_name],
+       base = "@distroless_base",
+       entrypoint = ["/%s" % cross_name],
+       exposed_ports = ["25000", "26000"],
+       repositories = [
+           "localhost:5001",
+           "gcr.io/my-project",  # Add production registry
+       ],
+   )
+   ```
+
+3. **Different ports** - Modify `exposed_ports` in `k8s/infra/server.bzl`:
+   ```python
+   exposed_ports = [
+       "8080",   # HTTP
+       "9090",   # gRPC
+   ],
+   ```
+
+#### Kubernetes Deployment
+
+The `k8s/infra/k8s.bzl` rules generate Kubernetes manifests:
+
+```bash
+# Print generated k8s resources for dev cluster
+bazel run //k8s/app:myapp-dev-print
+
+# This uses Kustomize under the hood to:
+# 1. Find the appropriate overlay (dev/staging/prod)
+# 2. Apply cluster-specific substitutions
+# 3. Generate final YAML
+```
+
+The `deploy_targets()` macro looks for kustomization files in this order:
+1. `{dir}/{cluster_path}/{environment}/kustomization.yaml`
+2. `{dir}/{cluster_path}/kustomization.yaml`
+3. `{dir}/{environment}/kustomization.yaml`
+4. `{dir}/kustomization.yaml`
+
+#### Important Notes
+
+- **Always use registry v3**: The push commands expect Docker registry v3 API
+- **SHA256 tags are immutable**: Each image gets a unique 7-character tag from its digest
+- **Latest tag is mutable**: Points to the most recently pushed image
+- **Local registry is ephemeral**: Restarting removes all images (fine for development)
+- **Cross-compilation is automatic**: `go_binary` macro handles Linux AMD64 builds
+
+### 13. Architecture Principles
 
 1. **Compile-time validation** - Invalid routing won't build
 2. **No reflection** - All routing resolved at compile time
@@ -355,6 +535,7 @@ When making changes to this codebase:
 3. Never manually edit BUILD or generated files
 4. Test changes with `bazel test //...`
 5. Check that both interface-gen and messenger-gen produce valid code
+6. When working with containers, ensure local registry is running on port 5001
 
 
 

@@ -41,7 +41,7 @@ build_sha265_tag = rule(
     },
 )
 
-def image(name, srcs, base, entrypoint, exposed_ports = [], repositories = ["localhost:5001"]):
+def image(name, srcs, base, entrypoint, exposed_ports = [], repositories = ["registry.localhost"], user = "65532"):
     """
     Builds and publishes an OCI image for a given binary.
 
@@ -52,6 +52,7 @@ def image(name, srcs, base, entrypoint, exposed_ports = [], repositories = ["loc
         entrypoint: List specifying the entrypoint command for the container.
         exposed_ports: Optional list of ports to expose from the container.
         repositories: urls of repositories to push images to
+        user: User ID to run the container as (default: 65532, the nonroot user in distroless)
 
     This macro:
       1. Packages the binary into a tar layer.
@@ -75,6 +76,7 @@ def image(name, srcs, base, entrypoint, exposed_ports = [], repositories = ["loc
         entrypoint = entrypoint,
         exposed_ports = exposed_ports,
         tars = ["{}_tar".format(name)],
+        user = user,
         visibility = ["//visibility:public"],
     )
 

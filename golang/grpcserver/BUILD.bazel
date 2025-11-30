@@ -1,8 +1,5 @@
-load("//k8s/infra:server.bzl", "go_binary")
-
-### GENERATED FILE ### DO NOT EDIT ###
-
 load("@rules_go//go:def.bzl", "go_library")
+load("//k8s/infra:server.bzl", "go_binary")
 
 go_binary(
     name = "grpcserver",

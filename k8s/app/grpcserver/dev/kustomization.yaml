@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+  - certificate.yaml
+
+# Rewrite image references to use in-cluster registry
+images:
+  - name: grpcserver
+    newName: "registry.localhost/grpcserver"
+    newTag: latest

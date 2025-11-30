@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: mgmt
+spec:
+  template:
+    spec:
+      containers:
+        - name: registry
+          env:
+            - name: REGISTRY_HTTP_TLS_CERTIFICATE
+              $patch: delete
+            - name: REGISTRY_HTTP_TLS_KEY
+              $patch: delete
+          volumeMounts:
+            - name: certs
+              $patch: delete
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+      volumes:
+        - name: certs
+          $patch: delete

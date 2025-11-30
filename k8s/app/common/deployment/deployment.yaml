@@ -19,10 +19,10 @@ spec:
         app.kubernetes.io/name: "{{name}}"
     spec:
       shareProcessNamespace: true # so we can attach a debugger
-      serviceAccountName: "{{namespace}}"
+      serviceAccountName: "{{name}}"
       containers:
       - name: "{{name}}"
-        image: "{{name}}:container"
+        image: "{{name}}"
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: environment-volume
@@ -30,9 +30,6 @@ spec:
           readOnly: true
         - name: 'database-credentials'
           mountPath: '/mnt/database-credentials/application'
-          readOnly: true
-        - name: "cert-volume"
-          mountPath: '/mnt/rootline-cert'
           readOnly: true
         - name: empty-dir
           mountPath: /tmp
@@ -51,6 +48,9 @@ spec:
             memory: 1Gi
       volumes:
       - name: environment-volume
+        configMap:
+          name: environment
+      - name: database-credentials
         configMap:
           name: environment
       - name: empty-dir

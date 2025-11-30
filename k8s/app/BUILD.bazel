@@ -9,8 +9,50 @@ TARGETS = [
         sync_group = "namespaces",
     ),
     target(
+        name = "cert-manager",
+        dir = "cert-manager",
+        enable_helm = True,
+        sync_group = "cert-operators",
+    ),
+    target(
+        name = "trust-manager",
+        dir = "trust-manager",
+        enable_helm = True,
+        sync_group = "operators",
+    ),
+    target(
+        name = "cnpg-operator",
+        dir = "cnpg-operator",
+        sync_group = "operators",
+    ),
+    target(
+        name = "nginx-ingress",
+        dir = "nginx-ingress",
+        sync_group = "operators",
+    ),
+    target(
+        name = "certificates",
+        dir = "common/certificates",
+        sync_group = "infra",
+    ),
+    target(
         name = "environment",
         dir = "common/environment",
+        sync_group = "infra",
+    ),
+    target(
+        name = "registry",
+        dir = "registry",
+        sync_group = "infra",
+    ),
+    target(
+        name = "otel-collector",
+        dir = "otel-collector",
+        sync_group = "infra",
+    ),
+    target(
+        name = "postgres",
+        dir = "postgres",
         sync_group = "infra",
     ),
     target(
