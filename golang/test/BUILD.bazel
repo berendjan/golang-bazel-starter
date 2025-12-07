@@ -8,6 +8,7 @@ go_test(
         "grpcserver_test.go",
         "grpcserverhttp_test.go",
     ],
+    data = ["//db/config:migrations"],
     deps = [
         ":test",
         "//golang/config/client",
@@ -17,6 +18,7 @@ go_test(
 go_library(
     name = "test",
     srcs = [
+        "dbmate.go",
         "testcontext.go",
         "testmiddleone.go",
         "textcontextproviders.go",
@@ -24,7 +26,6 @@ go_library(
     importpath = "github.com/berendjan/golang-bazel-starter/golang/test",
     visibility = ["//visibility:public"],
     deps = [
-        "//golang/config/db",
         "//golang/config/repository",
         "//golang/framework/db",
         "//golang/framework/serverbase",
@@ -35,6 +36,7 @@ go_library(
         "//proto/configuration/v1:configuration",
         "@com_github_docker_docker//api/types/container",
         "@com_github_google_uuid//:uuid",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_testcontainers_testcontainers_go//:testcontainers-go",
         "@com_github_testcontainers_testcontainers_go//wait",
     ],

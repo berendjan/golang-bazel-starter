@@ -1,9 +1,9 @@
 package test
 
 import (
+	"path/filepath"
 	"sync"
 
-	configDbMigrations "github.com/berendjan/golang-bazel-starter/golang/config/db"
 	"github.com/berendjan/golang-bazel-starter/golang/config/repository"
 	configRepository "github.com/berendjan/golang-bazel-starter/golang/config/repository"
 	"github.com/berendjan/golang-bazel-starter/golang/framework/serverbase"
@@ -25,7 +25,12 @@ const (
 )
 
 var (
-	ConfigDb DatabaseConfig = DatabaseConfig{database: config, migrations: configDbMigrations.MigrationsFS}
+	// Use dbmate migrations from db/config/migrations
+	// Path is relative to runfiles/_main/golang/test, so go up to _main first
+	ConfigDb DatabaseConfig = DatabaseConfig{
+		database:      config,
+		migrationsDir: filepath.Join("..", "..", "db", "config", "migrations"),
+	}
 )
 
 var (

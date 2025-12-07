@@ -14,41 +14,36 @@ spec:
   # Bootstrap configuration
   bootstrap:
     initdb:
-      database: app
-      owner: app
-      secret:
-        name: database-credentials
+      database: config
       postInitApplicationSQL:
-        # Create migrate-runner user for running database migrations
-        - CREATE USER "migrate-runner";
-        - GRANT ALL PRIVILEGES ON DATABASE app TO "migrate-runner";
-        - GRANT ALL PRIVILEGES ON SCHEMA public TO "migrate-runner";
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "migrate-runner";
-        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "migrate-runner";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "migrate-runner";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "migrate-runner";
+        # Create dbmate role with CREATEROLE privilege
+        - CREATE ROLE  "dbmate" WITH LOGIN CREATEROLE;
+        # Grant privileges to dbmate
+        - GRANT ALL PRIVILEGES ON DATABASE config TO "dbmate";
+        - GRANT ALL PRIVILEGES ON SCHEMA public TO "dbmate";
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "dbmate";
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "dbmate";
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "dbmate";
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "dbmate";
 
   # PostgreSQL configuration
   postgresql:
     parameters:
       max_connections: "100"
       shared_buffers: "256MB"
-      ssl: "on"
-      ssl_cert_file: "/run/secrets/postgres-server-tls/tls.crt"
-      ssl_key_file: "/run/secrets/postgres-server-tls/tls.key"
-      ssl_ca_file: "/run/secrets/postgres-ca/ca-bundle.crt"
     pg_hba:
-      # Certificate authentication for migrate-runner
-      - hostssl app migrate-runner 0.0.0.0/0 cert clientcert=verify-full
-      # Certificate authentication for grpcserver
-      - hostssl app grpcserver 0.0.0.0/0 cert clientcert=verify-full
+      # Certificate-only authentication for application users
+      - hostssl   config        dbmate          0.0.0.0/0 cert clientcert=verify-full
+      - hostssl   config        grpcserver      0.0.0.0/0 cert clientcert=verify-full
+      # reject the rest
+      - host      all           all             all            reject
 
   # SSL/TLS Configuration
   certificates:
     serverTLSSecret: postgres-server-tls
     serverCASecret: postgres-ca-bundle
     clientCASecret: postgres-ca-bundle
-    replicationTLSSecret: postgres-server-tls
+    replicationTLSSecret: postgres-replication-tls
 
   # Monitoring
   monitoring:

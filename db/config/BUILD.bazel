@@ -1,0 +1,15 @@
+load("//k8s/infra:dbmate.bzl", "dbmate_image")
+
+# Export migration files
+filegroup(
+    name = "migrations",
+    srcs = glob(["migrations/*.sql"]),
+    visibility = ["//visibility:public"],
+)
+
+# Create dbmate image with config database migrations
+dbmate_image(
+    name = "dbmate",
+    migrations = [":migrations"],
+    repositories = ["registry.localhost"],
+)

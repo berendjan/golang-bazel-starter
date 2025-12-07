@@ -7,7 +7,7 @@
 // Key features:
 // - Single shared container across all tests (created once via sync.Once)
 // - Isolated databases per test (each test gets unique database(s))
-// - Automatic migration execution via golang-migrate
+// - Automatic migration execution via dbmate format
 // - Support for multiple databases and servers per test
 // - Builder pattern for flexible configuration
 //
@@ -32,7 +32,6 @@ package test
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"log"
 	"math/rand"
@@ -40,7 +39,6 @@ import (
 	"time"
 
 	"github.com/berendjan/golang-bazel-starter/golang/framework/db"
-	frameworkDB "github.com/berendjan/golang-bazel-starter/golang/framework/db"
 	"github.com/berendjan/golang-bazel-starter/golang/framework/serverbase"
 	"github.com/docker/docker/api/types/container"
 	"github.com/google/uuid"
@@ -78,11 +76,11 @@ type TestContext struct {
 
 // TestDBContext manages a test database connection
 type TestDBContext struct {
-	client     *db.DBPool
-	dbName     string
-	dbURL      string
-	migrations embed.FS
-	testConfig *DatabaseConfig
+	client        *db.DBPool
+	dbName        string
+	dbURL         string
+	migrationsDir string
+	testConfig    *DatabaseConfig
 }
 
 // TestServerContext manages a test server instance
@@ -107,7 +105,7 @@ func (s *TestServerContext) Shutdown() {
 // DatabaseConfig holds configuration for a database to be created
 type DatabaseConfig struct {
 	database
-	migrations embed.FS
+	migrationsDir string
 }
 
 // ServerConfig holds configuration for a server to be created
@@ -299,7 +297,12 @@ func createDatabase(ctx context.Context, testID string, config DatabaseConfig, h
 	dbURL := fmt.Sprintf("postgres://postgres:postgres@%s:%d/%s?sslmode=disable",
 		host, port, dbName)
 
-	err = frameworkDB.RunMigrations(dbURL, config.migrations)
+	// Replace hardcoded database name "config" with actual test database name
+	replacements := map[string]string{
+		string(config.database): dbName,
+	}
+
+	err = RunDbmateMigrations(ctx, dbURL, config.migrationsDir, replacements)
 	if err != nil {
 		return nil, fmt.Errorf("migration failed: %w", err)
 	}
@@ -326,10 +329,10 @@ func createDatabase(ctx context.Context, testID string, config DatabaseConfig, h
 	}
 
 	return &TestDBContext{
-		client:     client,
-		dbName:     dbName,
-		dbURL:      dbURL,
-		migrations: config.migrations,
+		client:        client,
+		dbName:        dbName,
+		dbURL:         dbURL,
+		migrationsDir: config.migrationsDir,
 	}, nil
 }
 

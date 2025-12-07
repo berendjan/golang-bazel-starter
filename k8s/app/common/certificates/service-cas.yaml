@@ -83,16 +83,16 @@ spec:
     secretName: postgres-ca-secret
 
 ---
-# Migrate Runner CA
+# dbmate CA
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: migrate-runner-ca
+  name: dbmate-ca
   namespace: cert-manager
 spec:
   isCA: true
-  commonName: migrate-runner-ca
-  secretName: migrate-runner-ca-secret
+  commonName: dbmate-ca
+  secretName: dbmate-ca-secret
   duration: 87600h # 10 years
   privateKey:
     algorithm: RSA
@@ -104,7 +104,7 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: migrate-runner-ca-issuer
+  name: dbmate-ca-issuer
 spec:
   ca:
-    secretName: migrate-runner-ca-secret
+    secretName: dbmate-ca-secret

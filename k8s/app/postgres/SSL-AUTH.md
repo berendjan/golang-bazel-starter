@@ -19,22 +19,26 @@ The grpcserver authenticates to PostgreSQL using SSL client certificates instead
 ### Certificate Mounts in grpcserver
 - `/mnt/client-certs/tls.crt` - Client certificate
 - `/mnt/client-certs/tls.key` - Client private key
-- `/mnt/postgres-ca/ca-bundle.crt` - PostgreSQL CA bundle (to verify server)
+- `/mnt/postgres-ca/ca.crt` - PostgreSQL CA certificate (to verify server)
 
 ## PostgreSQL Configuration
 
 ### Cluster Configuration (cluster.yaml)
 ```yaml
-postgresql:
-  parameters:
-    ssl: "on"
-    ssl_cert_file: "/run/secrets/postgres-server-tls/tls.crt"
-    ssl_key_file: "/run/secrets/postgres-server-tls/tls.key"
-    ssl_ca_file: "/run/secrets/postgres-ca/ca-bundle.crt"
+# SSL configuration is automatic when certificates section is defined
+# CNPG manages SSL parameters internally
 
 certificates:
   serverTLSSecret: postgres-server-tls
+  serverCASecret: postgres-ca-bundle
   clientCASecret: postgres-ca-bundle
+  replicationTLSSecret: postgres-server-tls
+
+# Certificate authentication rules
+postgresql:
+  pg_hba:
+    - hostssl config dbmate 0.0.0.0/0 cert clientcert=verify-full
+    - hostssl config grpcserver 0.0.0.0/0 cert clientcert=verify-full
 ```
 
 ## Application Code Integration
@@ -57,10 +61,10 @@ func createConnectionString() string {
         "grpcserver",  // PostgreSQL user (matches cert CN)
         "app-postgres-rw.app-namespace.svc.cluster.local",
         "5432",
-        "app",
+        "config",
         "/mnt/client-certs/tls.crt",
         "/mnt/client-certs/tls.key",
-        "/mnt/postgres-ca/ca-bundle.crt",
+        "/mnt/postgres-ca/ca.crt",
     )
 }
 ```
@@ -80,7 +84,7 @@ A PostgreSQL user must be created that matches the client certificate's Common N
 ```sql
 -- Connect to postgres as superuser
 CREATE USER grpcserver;
-GRANT ALL PRIVILEGES ON DATABASE app TO grpcserver;
+GRANT ALL PRIVILEGES ON DATABASE config TO grpcserver;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO grpcserver;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO grpcserver;
 ```
@@ -109,7 +113,7 @@ hostssl app       app          0.0.0.0/0       scram-sha-256
 
 ```bash
 # From inside grpcserver pod
-psql "postgresql://grpcserver@app-postgres-rw.app-namespace.svc.cluster.local:5432/app?sslmode=verify-full&sslcert=/mnt/client-certs/tls.crt&sslkey=/mnt/client-certs/tls.key&sslrootcert=/mnt/postgres-ca/ca-bundle.crt"
+psql "postgresql://grpcserver@app-postgres-rw.app-namespace.svc.cluster.local:5432/app?sslmode=verify-full&sslcert=/mnt/client-certs/tls.crt&sslkey=/mnt/client-certs/tls.key&sslrootcert=/mnt/postgres-ca/ca.crt"
 ```
 
 ## Security Benefits

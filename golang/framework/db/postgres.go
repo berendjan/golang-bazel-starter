@@ -42,7 +42,7 @@ func DefaultConfig(dbName string) *Config {
 		SSLMode:           "verify-full",
 		SSLCert:           "/mnt/client-certs/tls.crt",
 		SSLKey:            "/mnt/client-certs/tls.key",
-		SSLRootCert:       "/mnt/postgres-ca/ca-bundle.crt",
+		SSLRootCert:       "/mnt/postgres-ca/ca.crt",
 		MaxConns:          25,
 		MinConns:          5,
 		MaxConnLifetime:   time.Hour,
@@ -78,6 +78,28 @@ func (c *Config) ConnectionString() string {
 	}
 
 	return connStr
+}
+
+// DatabaseURL builds a PostgreSQL database URL for tools like golang-migrate
+func (c *Config) DatabaseURL() string {
+	var url string
+
+	// When using SSL certificate authentication
+	if c.SSLCert != "" {
+		url = fmt.Sprintf(
+			"postgres://%s@%s:%d/%s?sslmode=%s&sslcert=%s&sslkey=%s&sslrootcert=%s",
+			c.User, c.Host, c.Port, c.Database, c.SSLMode,
+			c.SSLCert, c.SSLKey, c.SSLRootCert,
+		)
+	} else {
+		// Traditional password authentication
+		url = fmt.Sprintf(
+			"postgres://%s:%s@%s:%d/%s?sslmode=%s",
+			c.User, c.Password, c.Host, c.Port, c.Database, c.SSLMode,
+		)
+	}
+
+	return url
 }
 
 // NewPool creates a new PostgreSQL connection pool

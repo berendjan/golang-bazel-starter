@@ -8,8 +8,8 @@ spec:
         name: postgres-ca-secret
         key: ca.crt
   target:
-    configMap:
-      key: ca-bundle.crt
+    secret:
+      key: ca.crt
     namespaceSelector:
       matchLabels:
         kubernetes.io/metadata.name: app-namespace

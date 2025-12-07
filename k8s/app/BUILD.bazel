@@ -56,8 +56,8 @@ TARGETS = [
         sync_group = "infra",
     ),
     target(
-        name = "migrate-runner",
-        dir = "migrate-runner",
+        name = "dbmate",
+        dir = "dbmate",
         sync_group = "migrations",
     ),
     target(

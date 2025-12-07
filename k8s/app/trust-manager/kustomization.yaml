@@ -10,3 +10,12 @@ helmCharts:
     valuesInline:
       crds:
         enabled: true
+      secretTargets:
+        enabled: true
+
+# Patch ClusterRole to add Secret permissions for secretTargets feature
+patches:
+  - path: clusterrole-patch.yaml
+    target:
+      kind: ClusterRole
+      name: trust-manager

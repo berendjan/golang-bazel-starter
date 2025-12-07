@@ -1,0 +1,12 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dbmate
+  namespace: app-namespace
+spec:
+  template:
+    spec:
+      containers:
+      - name: dbmate
+        image: "registry.localhost/dbmate:latest"
+        imagePullPolicy: Always

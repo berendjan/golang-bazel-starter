@@ -518,7 +518,208 @@ The `deploy_targets()` macro looks for kustomization files in this order:
 - **Local registry is ephemeral**: Restarting removes all images (fine for development)
 - **Cross-compilation is automatic**: `go_binary` macro handles Linux AMD64 builds
 
-### 13. Architecture Principles
+### 13. Database Migrations with dbmate
+
+The project uses [dbmate](https://github.com/amacneil/dbmate) for database migrations in both production and tests.
+
+#### Migration File Structure
+
+Migrations are stored in `db/config/migrations/` using dbmate format:
+
+```sql
+-- migrate:up
+CREATE TABLE IF NOT EXISTS accounts (
+    id BYTEA PRIMARY KEY,
+    type INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- migrate:down
+DROP TABLE IF EXISTS accounts;
+```
+
+**Important**:
+- Do NOT include `CREATE DATABASE` or `DROP DATABASE` statements
+- Database creation is handled by PostgreSQL cluster bootstrap in Kubernetes
+- Database creation is handled by test framework in tests
+
+#### The dbmate Macro (`k8s/infra/dbmate.bzl`)
+
+A reusable Bazel macro for building dbmate migration images:
+
+```python
+load("//k8s/infra:dbmate.bzl", "dbmate_image")
+
+# Export migration files
+filegroup(
+    name = "migrations",
+    srcs = glob(["migrations/*.sql"]),
+    visibility = ["//visibility:public"],
+)
+
+# Create dbmate image with migrations
+dbmate_image(
+    name = "dbmate",
+    migrations = [":migrations"],
+    repositories = ["registry.localhost"],
+)
+```
+
+**What it creates:**
+- `{name}_image` - Multi-platform OCI image (linux/amd64, linux/arm64)
+- `{name}_remote_tag` - SHA256 tag file
+- `{name}_push` - Multirun target to push both sha256 and latest tags
+
+**Parameters:**
+- `name` - Base name for targets (e.g., "dbmate")
+- `migrations` - List of migration files or filegroup label
+- `package_dir` - Directory in image where migrations are stored (default: "/migrations")
+- `repositories` - List of registries to push to (default: ["registry.localhost"])
+
+#### Running Migrations in Kubernetes
+
+Migrations run as a Kubernetes Job that executes once during deployment:
+
+```yaml
+# k8s/app/dbmate/base/job.yaml
+containers:
+- name: dbmate
+  image: dbmate
+  command: ["dbmate"]
+  args: ["up"]
+  env:
+  - name: DATABASE_URL
+    value: "postgres://dbmate@app-postgres-rw.app-namespace.svc.cluster.local:5432/config?sslmode=verify-full&sslcert=/mnt/client-certs/tls.crt&sslkey=/mnt/client-certs/tls.key&sslrootcert=/mnt/postgres-ca/ca.crt"
+  - name: DBMATE_MIGRATIONS_DIR
+    value: "/migrations"
+```
+
+**Key points:**
+- Uses SSL certificate authentication
+- Runs as the `dbmate` PostgreSQL user (created during cluster bootstrap)
+- `dbmate` user has `CREATEROLE` privilege to create other database users
+
+#### Running Migrations in Tests
+
+Tests use a custom dbmate runner in `golang/test/dbmate.go` with SQL replacement support:
+
+```go
+// Replace hardcoded database names with test database names
+replacements := map[string]string{
+    "config": "config_83892444",  // Dynamic test database name
+}
+
+err := RunDbmateMigrations(ctx, dbURL, migrationsDir, replacements)
+```
+
+**How it works:**
+1. Test framework creates databases with dynamic names (e.g., `config_83892444`)
+2. Migration SQL references hardcoded names (e.g., `config` in GRANT statements)
+3. `RunDbmateMigrations` replaces all occurrences before execution
+4. Same migration files work in both production and tests
+
+**Test migration flow:**
+```go
+func createDatabase(ctx, testID, config) (*TestDBContext, error) {
+    dbName := fmt.Sprintf("%s_%s", config.database, testID)
+
+    // Replace database name in SQL before running migrations
+    replacements := map[string]string{
+        string(config.database): dbName,
+    }
+
+    err := RunDbmateMigrations(ctx, dbURL, config.migrationsDir, replacements)
+}
+```
+
+#### Adding New Migrations
+
+**1. Create migration file** in `db/config/migrations/`:
+```bash
+# Timestamp format: YYYYMMDDHHMMSS
+touch db/config/migrations/20250107120000_add_user_profiles.sql
+```
+
+**2. Write migration SQL:**
+```sql
+-- migrate:up
+CREATE TABLE IF NOT EXISTS user_profiles (
+    user_id BYTEA PRIMARY KEY,
+    display_name TEXT NOT NULL
+);
+
+-- migrate:down
+DROP TABLE IF EXISTS user_profiles;
+```
+
+**3. Test locally:**
+```bash
+# Build and push image
+bazel run //db/config:dbmate_push
+
+# Run in Kubernetes
+kubectl delete job dbmate -n app-namespace  # Delete old job
+kubectl apply -k k8s/app/dbmate/dev
+
+# Watch migration job
+kubectl logs -f job/dbmate -n app-namespace
+```
+
+**4. Verify tests still pass:**
+```bash
+bazel test //golang/test:test_test
+```
+
+#### Creating Migrations for New Databases
+
+To add migrations for a new database (e.g., "analytics"):
+
+**1. Create directory structure:**
+```
+db/analytics/
+├── BUILD.bazel
+└── migrations/
+    └── 20250107120000_initial_schema.sql
+```
+
+**2. Create BUILD.bazel:**
+```python
+load("//k8s/infra:dbmate.bzl", "dbmate_image")
+
+filegroup(
+    name = "migrations",
+    srcs = glob(["migrations/*.sql"]),
+    visibility = ["//visibility:public"],
+)
+
+dbmate_image(
+    name = "dbmate_analytics",
+    migrations = [":migrations"],
+    repositories = ["registry.localhost"],
+)
+```
+
+**3. Create Kubernetes Job:**
+```yaml
+# k8s/app/dbmate-analytics/base/job.yaml
+# Similar to dbmate job but with different database URL
+```
+
+#### Troubleshooting
+
+**Migration files not found in tests:**
+- Ensure `data = ["//db/config:migrations"]` in test BUILD file
+- Check migrations path is relative to Bazel runfiles: `../../db/config/migrations`
+
+**Permission errors in Kubernetes:**
+- Verify `dbmate` user has correct privileges in PostgreSQL cluster
+- Check `postInitApplicationSQL` in `k8s/app/postgres/base/cluster.yaml`
+
+**Database name mismatch in tests:**
+- Add replacement mapping in test context provider
+- Ensure all database references use the replacement system
+
+### 14. Architecture Principles
 
 1. **Compile-time validation** - Invalid routing won't build
 2. **No reflection** - All routing resolved at compile time
@@ -536,6 +737,7 @@ When making changes to this codebase:
 4. Test changes with `bazel test //...`
 5. Check that both interface-gen and messenger-gen produce valid code
 6. When working with containers, ensure local registry is running on port 5001
+7. When adding database migrations, ensure tests still pass and migration works in Kubernetes
 
 
 

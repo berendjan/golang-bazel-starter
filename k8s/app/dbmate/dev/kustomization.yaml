@@ -3,3 +3,9 @@ kind: Kustomization
 
 resources:
   - ../base
+
+patches:
+  - path: job.yaml
+    target:
+      kind: Job
+      name: dbmate

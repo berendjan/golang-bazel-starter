@@ -33,10 +33,10 @@ fi
 echo "✓ Registry is accessible"
 echo ""
 
-# Build and push migrate-runner
-echo "Building and pushing migrate-runner..."
+# Build and push dbmate
+echo "Building and pushing dbmate..."
 echo "-----------------------------------"
-bazel run //golang/migrate-runner:migrate-runner_push
+bazel run //db/config:dbmate_push
 
 echo ""
 
@@ -55,14 +55,14 @@ curl -s http://${REGISTRY_URL}/v2/_catalog | jq '.'
 
 echo ""
 
-# Check migrate-runner specifically
-if curl -s http://${REGISTRY_URL}/v2/_catalog | grep -q migrate-runner; then
-    echo "✓ migrate-runner image pushed successfully"
+# Check dbmate specifically
+if curl -s http://${REGISTRY_URL}/v2/_catalog | grep -q dbmate; then
+    echo "✓ dbmate image pushed successfully"
     echo ""
-    echo "Tags for migrate-runner:"
-    curl -s http://${REGISTRY_URL}/v2/migrate-runner/tags/list | jq '.'
+    echo "Tags for dbmate:"
+    curl -s http://${REGISTRY_URL}/v2/dbmate/tags/list | jq '.'
 else
-    echo "✗ migrate-runner image not found in registry"
+    echo "✗ dbmate image not found in registry"
     exit 1
 fi
 

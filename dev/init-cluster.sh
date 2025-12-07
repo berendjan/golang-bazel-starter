@@ -76,7 +76,7 @@ bazel run //k8s/app:apply-dev-migrations
 
 echo ""
 echo "Waiting for migrations to complete..."
-kubectl wait --for=condition=complete --timeout=180s job/migrate-runner -n app-namespace
+kubectl wait --for=condition=complete --timeout=180s job/dbmate -n app-namespace
 
 echo ""
 echo "Step 7: Deploying applications (grpcserver)..."

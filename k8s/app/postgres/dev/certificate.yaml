@@ -34,18 +34,37 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: migrate-runner-tls
+  name: postgres-replication-tls
   namespace: app-namespace
 spec:
-  secretName: migrate-runner-tls
+  secretName: postgres-replication-tls
   duration: 2160h # 90 days
   renewBefore: 360h # 15 days before expiry
   subject:
     organizations:
       - dev-cluster
-  commonName: migrate-runner
+  commonName: streaming_replica
   usages:
     - client auth
   issuerRef:
-    name: migrate-runner-ca-issuer
+    name: postgres-ca-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dbmate-tls
+  namespace: app-namespace
+spec:
+  secretName: dbmate-tls
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days before expiry
+  subject:
+    organizations:
+      - dev-cluster
+  commonName: dbmate
+  usages:
+    - client auth
+  issuerRef:
+    name: postgres-ca-issuer
     kind: ClusterIssuer

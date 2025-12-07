@@ -63,7 +63,7 @@ spec:
         secret:
           secretName: "{{name}}-tls"
       - name: postgres-ca
-        configMap:
-          name: postgres-ca-bundle
+        secret:
+          secretName: postgres-ca-bundle
       - name: empty-dir
         emptyDir: {}
