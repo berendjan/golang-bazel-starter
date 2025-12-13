@@ -728,6 +728,169 @@ dbmate_image(
 5. **Clean separation** - Handlers don't know about routing, messenger handles it
 6. **Testability** - Easy to swap implementations via interfaces
 
+### 15. Frontend Development with React + Bazel
+
+The project includes a React frontend built with Vite and managed through Bazel with pnpm workspaces.
+
+#### Frontend Structure
+
+```
+golang-bazel-starter/
+├── package.json            # Root workspace dependencies (eslint, vitest)
+├── pnpm-lock.yaml          # Lock file for all npm packages
+├── pnpm-workspace.yaml     # Defines frontend/react as workspace package
+├── eslint.config.mjs       # ESLint v9 flat config (MUST be at root for ESLint to find it)
+├── frontend/
+│   ├── react/              # React application
+│   │   ├── src/            # Source files (.tsx, .ts)
+│   │   ├── public/         # Static assets
+│   │   ├── package.json    # React app dependencies
+│   │   ├── tsconfig.json   # TypeScript config
+│   │   ├── vite.config.js  # Vite configuration
+│   │   └── BUILD.bazel     # Bazel build rules
+│   └── tools/
+│       ├── lint/           # ESLint Bazel aspect configuration
+│       │   ├── BUILD.bazel # ESLint binary target
+│       │   └── linters.bzl # lint_eslint_aspect definition
+│       ├── vitest/         # Vitest test runner
+│       └── pnpm            # Bazel-managed pnpm script
+```
+
+#### npm Dependency Management
+
+**IMPORTANT**: Use the Bazel-managed pnpm script, NOT system pnpm.
+
+**Adding dependencies:**
+```bash
+# Go to the webpage directory
+cd frontend/react
+
+# Add a runtime dependency
+../tools/pnpm add axios
+
+# Add a dev dependency
+../tools/pnpm add -D @types/lodash
+
+# Then add to BUILD.bazel deps in the ts_project
+deps = [
+    "//frontend/react:node_modules/axios",
+]
+```
+
+**Removing dependencies:**
+```bash
+cd frontend/react
+../tools/pnpm remove axios
+# Also remove from BUILD.bazel deps
+```
+
+**Root-level dev dependencies** (shared tools like eslint):
+```bash
+# From project root
+./frontend/tools/pnpm add -D -w prettier
+# Reference as "//:node_modules/prettier" in BUILD files
+```
+
+#### Adding New Frontend Pages/Components
+
+1. **Create the component** in `frontend/react/src/`:
+   ```tsx
+   // frontend/react/src/pages/Dashboard.tsx
+   export function Dashboard() {
+     return <div>Dashboard</div>;
+   }
+   ```
+
+2. **Import and use** in App.tsx or routing config
+
+3. **Build to verify**: `bazel build //frontend/react:build`
+
+4. **Test with hot reload**: `ibazel run //frontend/react:start`
+
+#### Adding a New Frontend Application
+
+To add a second frontend app (e.g., admin panel):
+
+1. **Create directory structure:**
+   ```
+   frontend/admin/
+   ├── src/
+   │   ├── index.tsx
+   │   └── App.tsx
+   ├── public/
+   ├── package.json
+   ├── tsconfig.json
+   ├── vite.config.js
+   ├── index.html
+   ├── defs.bzl
+   └── BUILD.bazel
+   ```
+
+2. **Update pnpm-workspace.yaml:**
+   ```yaml
+   packages:
+     - frontend/react
+     - frontend/admin
+   ```
+
+3. **Copy and adapt BUILD.bazel** from frontend/react
+
+4. **Install dependencies:**
+   ```bash
+   cd frontend/admin
+   ../tools/pnpm install
+   ```
+
+5. **ESLint Configuration**
+
+The linter aspect is configured in `frontend/tools/lint/linters.bzl`, here you need to add the package_json:
+```python
+eslint = lint_eslint_aspect(
+    binary = Label(":eslint"),
+    configs = [
+        Label("//:eslintrc"), # Points to root eslint.config.mjs
+        Label("//frontend/react:package_json"),
+        Label("//frontend/admin:package_json"),
+    ], 
+)
+```
+
+Linting runs automatically during `bazel build` (configured in `.bazelrc`).
+
+6. **Add to BazelIgnore**
+
+Bazel must ignore the node_modules
+```
+node_modules
+frontend/react/node_modules
+frontend/admin/node_modules
+```
+
+#### Frontend Build Commands
+
+```bash
+# Install/update npm dependencies
+./frontend/tools/pnpm install
+
+# Development server with hot reload
+ibazel run //frontend/react:start
+
+# Production build (linting runs automatically)
+bazel build //frontend/react:build
+
+# Run tests
+bazel test //frontend/react/src:test
+
+# Run linting only
+bazel test //frontend/react/src:lint
+```
+
+#### Removing a Frontend Application
+
+1. Delete the directory (e.g., `frontend/admin/`)
+2. Remove from `pnpm-workspace.yaml`
+3. Run `./frontend/tools/pnpm install` to update lock file
+
 ---
 
 When making changes to this codebase:
@@ -738,6 +901,5 @@ When making changes to this codebase:
 5. Check that both interface-gen and messenger-gen produce valid code
 6. When working with containers, ensure local registry is running on port 5001
 7. When adding database migrations, ensure tests still pass and migration works in Kubernetes
-
-
-
+- dont put claude or anthropic as author in commit messages
+- use ./frontend/tools/pnpm install

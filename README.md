@@ -543,12 +543,139 @@ bazel build //...
 
 MIT License - see LICENSE file for details
 
+## Frontend Development
+
+The project includes a React frontend built with Vite and managed through Bazel.
+
+### Project Structure
+
+```
+golang-bazel-starter/
+├── package.json            # Root workspace dependencies (eslint, vitest, etc.)
+├── pnpm-lock.yaml          # Lock file for all npm packages
+├── pnpm-workspace.yaml     # Defines frontend/react as workspace package
+├── eslint.config.mjs       # ESLint v9 flat config (must be at root)
+├── frontend/
+│   ├── react/              # React application
+│   │   ├── src/            # Source files (.tsx, .ts)
+│   │   ├── public/         # Static assets
+│   │   ├── package.json    # React app dependencies
+│   │   ├── tsconfig.json   # TypeScript config
+│   │   ├── vite.config.js  # Vite configuration
+│   │   └── BUILD.bazel     # Bazel build rules
+│   └── tools/
+│       ├── lint/           # ESLint Bazel configuration
+│       ├── vitest/         # Test runner config
+│       └── pnpm            # Bazel-managed pnpm script
+```
+
+### Quick Start
+
+```bash
+# Install npm dependencies
+./frontend/tools/pnpm install
+
+# Start development server with hot reload
+ibazel run //frontend/react:start
+
+# Build production bundle (linting runs automatically)
+bazel build //frontend/react:build
+
+# Run tests
+bazel test //frontend/react/src:test
+
+# Run linting only
+bazel test //frontend/react/src:lint
+```
+
+### Adding npm Dependencies
+
+```bash
+# Go to the webpage directory
+cd frontend/react
+
+# Add a dependency
+../tools/pnpm add tailwindcss
+
+# Add a dev dependency
+../tools/pnpm add -D @types/lodash
+
+# Then add to BUILD.bazel deps (in ts_project that needs it)
+# Example: "//frontend/react:node_modules/tailwindcss"
+```
+
+### Removing npm Dependencies
+
+```bash
+# Go to the webpage directory
+cd frontend/react
+
+# Remove a dependency
+../tools/pnpm remove tailwindcss
+
+# Remove from BUILD.bazel deps as well
+```
+
+### Adding New Pages/Components
+
+1. **Create component file** in `frontend/react/src/`:
+   ```tsx
+   // frontend/react/src/MyPage.tsx
+   export function MyPage() {
+     return <div>My New Page</div>;
+   }
+   ```
+
+2. **Import and use** in your app:
+   ```tsx
+   // frontend/react/src/App.tsx
+   import { MyPage } from './MyPage';
+   ```
+
+3. **Build and test**:
+   ```bash
+   bazel build //frontend/react:build
+   ibazel run //frontend/react:start
+   ```
+
+### Production Build
+
+```bash
+# Build optimized bundle (linting runs automatically)
+bazel build //frontend/react:build
+
+# Output is at: bazel-bin/frontend/react/dist/
+```
+
+### Linting
+
+ESLint v9 with TypeScript support runs automatically during `bazel build`. Config is at root (`eslint.config.mjs`).
+
+```bash
+# Run linting only
+bazel test //frontend/react/src:lint
+```
+
+### Testing
+
+Uses Vitest for unit testing:
+
+```bash
+# Run tests
+bazel test //frontend/react/src:test
+
+# Run with verbose output
+bazel test //frontend/react/src:test --test_output=all
+```
+
 ## Resources
 
 - [Bazel Documentation](https://bazel.build/)
 - [gRPC Go](https://grpc.io/docs/languages/go/)
 - [Protocol Buffers](https://protobuf.dev/)
 - [Testcontainers Go](https://golang.testcontainers.org/)
+- [Vite](https://vitejs.dev/)
+- [React](https://react.dev/)
 
 ## Support
 

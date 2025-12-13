@@ -35,3 +35,16 @@ test --test_summary=detailed
 # Remote cache configuration (uncomment if using remote cache)
 # build --remote_cache=grpc://localhost:9092
 # build --remote_upload_local_results=true
+
+# Linting configuration
+# Run linting during build (use --config=lint to enable)
+build:lint --aspects=//frontend/tools/lint:linters.bzl%eslint
+build:lint --output_groups=+rules_lint_report
+
+# Fail the build if there are lint violations
+build:lint --@aspect_rules_lint//lint:fail_on_violation
+
+# Always run linting during build for frontend targets (uncomment to enable by default)
+# build --aspects=//frontend/tools/lint:linters.bzl%eslint
+# build --output_groups=+rules_lint_report
+# build --@aspect_rules_lint//lint:fail_on_violation
