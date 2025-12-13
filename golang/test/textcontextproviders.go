@@ -15,26 +15,26 @@ import (
 type database string
 
 const (
-	config database = database(configRepository.DbName)
+	configDb database = database(configRepository.DbName)
 )
 
 type server string
 
 const (
-	grpc server = "grpc-server"
+	grpcServer server = "grpc-server"
 )
 
 var (
 	// Use dbmate migrations from db/config/migrations
 	// Path is relative to runfiles/_main/golang/test, so go up to _main first
 	ConfigDb DatabaseConfig = DatabaseConfig{
-		database:      config,
+		database:      configDb,
 		migrationsDir: filepath.Join("..", "..", "db", "config", "migrations"),
 	}
 )
 
 var (
-	GrpcServer ServerConfig = ServerConfig{server: grpc, provider: func(tcp *TestContextProvider) *serverbase.ServerBase {
+	GrpcServer ServerConfig = ServerConfig{server: grpcServer, provider: func(tcp *TestContextProvider) *serverbase.ServerBase {
 		return grpcserver.NewGrpcServer(tcp.createMessenger()).ServerBase
 	}}
 )
@@ -55,7 +55,7 @@ func (tcp *TestContextProvider) createMessenger() *messenger.GrpcMessenger {
 	tcp.messengerOnce.Do(func() {
 
 		// Get database pool
-		pool := tcp.dbContexts[config].client
+		pool := tcp.dbContexts[configDb].client
 
 		// Create repository
 		accountRepo := repository.NewAccountRepository(pool)

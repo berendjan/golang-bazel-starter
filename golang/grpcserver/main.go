@@ -64,8 +64,12 @@ func createMessenger() *messenger.GrpcMessenger {
 }
 
 func main() {
+	// TLS certificate and key files
+	certFile := "/mnt/server-certs/tls.crt"
+	keyFile := "/mnt/server-certs/tls.key"
+
 	// Create and launch gRPC server
-	grpcServer := NewGrpcServer(createMessenger())
+	grpcServer := NewGrpcServer(createMessenger()).WithTLS(certFile, keyFile)
 	log.Println("Starting gRPC server with messenger")
 
 	// Launch server

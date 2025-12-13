@@ -3,10 +3,9 @@ kind: Kustomization
 
 resources:
   - ../base
-  - certificate.yaml
 
 # Rewrite image references to use in-cluster registry
 images:
-  - name: grpcserver
+  - name: "{{name}}"
     newName: "registry.localhost/grpcserver"
     newTag: latest

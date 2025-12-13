@@ -2,6 +2,7 @@ package serverbase
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -21,6 +22,7 @@ type ServerBase struct {
 	shutdownCtx context.Context
 	cancel      context.CancelFunc
 	wg          sync.WaitGroup
+	tlsConfig   *tls.Config
 }
 
 func NewServerBase() *ServerBase {
@@ -29,6 +31,22 @@ func NewServerBase() *ServerBase {
 		shutdownCtx: ctx,
 		cancel:      cancel,
 	}
+}
+
+// WithTLS configures TLS for both gRPC and HTTP servers using certificate files
+func (s *ServerBase) WithTLS(certFile, keyFile string) *ServerBase {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.Printf("TLS disabled: failed to load certificates from %s and %s: %v", certFile, keyFile, err)
+		return s
+	}
+
+	s.tlsConfig = &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+	}
+	log.Printf("TLS enabled using certificate: %s", certFile)
+	return s
 }
 
 func (s *ServerBase) LaunchWithDefaultPorts() error {
@@ -67,6 +85,7 @@ func (s *ServerBase) runServer(sb *ServerBuilder) error {
 	s.setupGracefulShutdown()
 
 	// Start all gRPC servers
+	log.Printf("Starting %d gRPC server(s) and %d HTTP server(s)...", len(sb.grpcServers), len(sb.httpServers))
 	for grpcPort, grpcServer := range sb.grpcServers {
 		s.wg.Add(1)
 		go s.startGRPCServer(grpcPort, grpcServer)
@@ -90,6 +109,14 @@ func (s *ServerBase) startGRPCServer(grpcPort int, grpcServer *grpc.Server) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
 		log.Fatalf("Failed to listen on gRPC port %d: %v", grpcPort, err)
+	}
+
+	// Wrap listener with TLS if configured
+	if s.tlsConfig != nil {
+		lis = tls.NewListener(lis, s.tlsConfig)
+		log.Printf("gRPC server listening on port %d (TLS)", grpcPort)
+	} else {
+		log.Printf("gRPC server listening on port %d", grpcPort)
 	}
 
 	// Setup shutdown listener
@@ -118,7 +145,13 @@ func (s *ServerBase) startHTTPServer(httpPort int, httpMux *runtime.ServeMux) {
 		log.Fatalf("Failed to listen on HTTP port %d: %v", httpPort, err)
 	}
 
-	log.Printf("HTTP server listening on port %d", httpPort)
+	// Wrap listener with TLS if configured
+	if s.tlsConfig != nil {
+		lis = tls.NewListener(lis, s.tlsConfig)
+		log.Printf("HTTPS server listening on port %d (TLS)", httpPort)
+	} else {
+		log.Printf("HTTP server listening on port %d", httpPort)
+	}
 
 	// Setup shutdown listener
 	go func() {

@@ -4,32 +4,43 @@ metadata:
   name: "{{name}}"
   namespace: "{{namespace}}"
 spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
   template:
-    metadata:
-      labels:
-        my-custom-label: label-value
     spec:
+      shareProcessNamespace: true # so we can attach a debugger
       containers:
-        - name: "{{name}}"
-          image: "grpcserver"
-          imagePullPolicy: IfNotPresent
-          ports:
-          - name: grpc-port
-            containerPort: 25000
-          - name: http-port
-            containerPort: 26000
-          startupProbe:
-            httpGet:
-              path: /health
-              port: http-port
-              scheme: HTTPS
-            failureThreshold: 120
-            periodSeconds: 1
-            timeoutSeconds: 5
-            successThreshold: 1
+      - name: "{{name}}"
+        imagePullPolicy: Always
+        ports:
+        - name: grpc-port
+          containerPort: 25000
+        - name: http-port
+          containerPort: 26000
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http-port
+            scheme: HTTPS
+          failureThreshold: 120
+          periodSeconds: 1
+          timeoutSeconds: 5
+          successThreshold: 1
+        volumeMounts:
+        - name: client-certs
+          mountPath: /mnt/client-certs
+          readOnly: true
+        - name: server-certs
+          mountPath: /mnt/server-certs
+          readOnly: true
+        - name: postgres-ca
+          mountPath: /mnt/postgres-ca
+          readOnly: true
+      volumes:
+      - name: client-certs
+        secret:
+          secretName: grpcserver-postgres-tls
+      - name: server-certs
+        secret:
+          secretName: grpcserver-server-tls
+      - name: postgres-ca
+        secret:
+          secretName: postgres-ca-bundle

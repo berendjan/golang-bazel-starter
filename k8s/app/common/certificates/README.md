@@ -8,7 +8,7 @@ This directory contains the certificate infrastructure for the cluster using cer
 selfsigned-issuer (ClusterIssuer)
   ├─> registry-ca → registry-ca-issuer → registry certificates
   ├─> grpcserver-ca → grpcserver-ca-issuer → grpcserver certificates
-  └─> postgres-ca → postgres-ca-issuer → postgres certificates
+  └─> postgres-ca → postgres-ca-issuer → postgres certificates → postgres bundle
 ```
 
 Each service has its own Certificate Authority (CA) for mTLS.

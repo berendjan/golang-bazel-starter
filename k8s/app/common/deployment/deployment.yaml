@@ -6,10 +6,13 @@ metadata:
   labels:
     app.kubernetes.io/name: "{{name}}"
 spec:
-  replicas: 1
+  replicas: 3
   revisionHistoryLimit: 3
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: "{{name}}"
@@ -18,24 +21,14 @@ spec:
       labels:
         app.kubernetes.io/name: "{{name}}"
     spec:
-      shareProcessNamespace: true # so we can attach a debugger
       serviceAccountName: "{{name}}"
       containers:
       - name: "{{name}}"
-        image: "{{name}}"
+        image: "{{name}}:latest"
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: environment-volume
           mountPath: "/environment"
-          readOnly: true
-        - name: 'database-credentials'
-          mountPath: '/mnt/database-credentials/application'
-          readOnly: true
-        - name: client-certs
-          mountPath: /mnt/client-certs
-          readOnly: true
-        - name: postgres-ca
-          mountPath: /mnt/postgres-ca
           readOnly: true
         - name: empty-dir
           mountPath: /tmp
@@ -56,14 +49,5 @@ spec:
       - name: environment-volume
         configMap:
           name: environment
-      - name: database-credentials
-        configMap:
-          name: environment
-      - name: client-certs
-        secret:
-          secretName: "{{name}}-tls"
-      - name: postgres-ca
-        secret:
-          secretName: postgres-ca-bundle
       - name: empty-dir
         emptyDir: {}

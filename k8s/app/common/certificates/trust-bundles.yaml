@@ -1,42 +1,31 @@
-# Trust bundles to distribute CA certificates to all namespaces
-# Services can use these to verify certificates from other services
-
----
-# Bundle containing all service CAs
 apiVersion: trust.cert-manager.io/v1alpha1
 kind: Bundle
 metadata:
-  name: all-service-cas
+  name: grpcserver-ca-bundle
 spec:
   sources:
     - secret:
-        name: registry-ca-secret
-        key: ca.crt
-    - secret:
         name: grpcserver-ca-secret
         key: ca.crt
+  target:
+    secret:
+      key: ca.crt
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: app-namespace
+---
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: postgres-ca-bundle
+spec:
+  sources:
     - secret:
         name: postgres-ca-secret
         key: ca.crt
   target:
-    configMap:
-      key: ca-bundle.crt
-    namespaceSelector:
-      matchLabels: {}  # All namespaces
-
----
-# Individual CA bundles (optional, for services that only need specific CAs)
-apiVersion: trust.cert-manager.io/v1alpha1
-kind: Bundle
-metadata:
-  name: registry-ca-bundle
-spec:
-  sources:
-    - secret:
-        name: registry-ca-secret
-        key: ca.crt
-  target:
-    configMap:
+    secret:
       key: ca.crt
     namespaceSelector:
-      matchLabels: {}
+      matchLabels:
+        kubernetes.io/metadata.name: app-namespace

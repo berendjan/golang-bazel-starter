@@ -60,46 +60,12 @@ type DBPool struct {
 func (c *Config) ConnectionString() string {
 	var connStr string
 
-	// When using SSL certificate authentication, omit the password
-	if c.SSLCert != "" {
-		connStr = fmt.Sprintf(
-			"host=%s port=%d user=%s dbname=%s sslmode=%s",
-			c.Host, c.Port, c.User, c.Database, c.SSLMode,
-		)
-		connStr += fmt.Sprintf(" sslcert=%s", c.SSLCert)
-		connStr += fmt.Sprintf(" sslkey=%s", c.SSLKey)
-		connStr += fmt.Sprintf(" sslrootcert=%s", c.SSLRootCert)
-	} else {
-		// Traditional password authentication
-		connStr = fmt.Sprintf(
-			"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-			c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode,
-		)
-	}
+	connStr = fmt.Sprintf(
+		"host=%s port=%d user=%s dbname=%s sslmode=%s sslcert=%s sslkey=%s sslrootcert=%s",
+		c.Host, c.Port, c.User, c.Database, c.SSLMode, c.SSLCert, c.SSLKey, c.SSLRootCert,
+	)
 
 	return connStr
-}
-
-// DatabaseURL builds a PostgreSQL database URL for tools like golang-migrate
-func (c *Config) DatabaseURL() string {
-	var url string
-
-	// When using SSL certificate authentication
-	if c.SSLCert != "" {
-		url = fmt.Sprintf(
-			"postgres://%s@%s:%d/%s?sslmode=%s&sslcert=%s&sslkey=%s&sslrootcert=%s",
-			c.User, c.Host, c.Port, c.Database, c.SSLMode,
-			c.SSLCert, c.SSLKey, c.SSLRootCert,
-		)
-	} else {
-		// Traditional password authentication
-		url = fmt.Sprintf(
-			"postgres://%s:%s@%s:%d/%s?sslmode=%s",
-			c.User, c.Password, c.Host, c.Port, c.Database, c.SSLMode,
-		)
-	}
-
-	return url
 }
 
 // NewPool creates a new PostgreSQL connection pool

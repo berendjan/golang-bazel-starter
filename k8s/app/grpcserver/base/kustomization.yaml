@@ -5,4 +5,5 @@ patches:
   - path: deployment.yaml
 
 resources:
+  - certificate.yaml
   - ../../common/deployment
