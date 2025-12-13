@@ -32,6 +32,10 @@ build --color=yes
 test --test_output=errors
 test --test_summary=detailed
 
+# Go test configuration (use --config=go for verbose Go test output)
+test:go --test_arg=-test.v
+test:go --test_output=all
+
 # Remote cache configuration (uncomment if using remote cache)
 # build --remote_cache=grpc://localhost:9092
 # build --remote_upload_local_results=true

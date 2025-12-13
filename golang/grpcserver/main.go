@@ -20,6 +20,9 @@ type GrpcServer struct {
 }
 
 func (g *GrpcServer) Register(sb *serverbase.ServerBuilder, grpcPort, httpPort int) error {
+	// Register health endpoint
+	sb.RegisterHealthEndpoint(httpPort)
+
 	// Setup dependencies - register the AccountApi
 	sb.RegisterService(grpcPort, httpPort, g.accountApi)
 	return nil

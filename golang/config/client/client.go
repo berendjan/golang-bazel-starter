@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -52,7 +53,13 @@ func NewClient(ctx context.Context, cfg *Config) (*ConfigurationClient, error) {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	conn, err := grpc.NewClient(cfg.ServerAddress, opts...)
+	// Use passthrough resolver for localhost to avoid slow DNS resolution
+	target := cfg.ServerAddress
+	if strings.HasPrefix(target, "localhost") || strings.HasPrefix(target, "127.0.0.1") {
+		target = "passthrough:///" + target
+	}
+
+	conn, err := grpc.NewClient(target, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to server: %w", err)
 	}

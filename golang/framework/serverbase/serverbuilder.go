@@ -3,6 +3,7 @@ package serverbase
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -113,4 +114,25 @@ func (sb *ServerBuilder) RegisterGateway(httpPort int, service HTTPGatewayRegist
 // Returns nil if no server exists on that port
 func (sb *ServerBuilder) GRPCServer(grpcPort int) *grpc.Server {
 	return sb.grpcServers[grpcPort]
+}
+
+// RegisterHealthEndpoint registers a /health endpoint on the specified HTTP port
+// Returns {"status": "ok"} when the server is running
+func (sb *ServerBuilder) RegisterHealthEndpoint(httpPort int) *ServerBuilder {
+	httpMux, exists := sb.httpServers[httpPort]
+	if !exists {
+		httpMux = runtime.NewServeMux()
+		sb.httpServers[httpPort] = httpMux
+	}
+
+	err := httpMux.HandlePath("GET", "/health", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+	if err != nil {
+		log.Fatalf("Failed to register health endpoint: %v", err)
+	}
+
+	return sb
 }

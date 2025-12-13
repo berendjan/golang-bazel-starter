@@ -42,9 +42,6 @@ func RunDbmateMigrations(ctx context.Context, dbURL string, migrationsDir string
 		return fmt.Errorf("failed to create schema_migrations table: %w", err)
 	}
 
-	// Get current working directory for debugging
-	cwd, _ := os.Getwd()
-	log.Printf("Current working directory: %s", cwd)
 	log.Printf("Looking for migrations in: %s", migrationsDir)
 
 	// Read migration files

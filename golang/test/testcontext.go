@@ -35,6 +35,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"sync"
 	"time"
 
@@ -356,10 +357,10 @@ func createServer(_ context.Context, config ServerConfig, dependencyProvider *Te
 		}
 	}()
 
-	// Wait for server to be ready with timeout
-	if err := server.WaitUntilReady(10 * time.Second); err != nil {
+	// Wait for server to be ready by polling /health endpoint
+	healthURL := fmt.Sprintf("http://localhost:%d/health", httpPort)
+	if err := waitForHealthEndpoint(healthURL, 10*time.Second); err != nil {
 		server.Shutdown()
-		// Wait for the goroutine to clean up
 		<-serverDone
 		return nil, fmt.Errorf("server startup failed: %w", err)
 	}
@@ -464,4 +465,25 @@ func TerminateSharedContainer(ctx context.Context) error {
 		log.Println("Shared PostgreSQL test container terminated")
 	}
 	return nil
+}
+
+// waitForHealthEndpoint polls the /health endpoint until it returns 200 OK or timeout expires
+func waitForHealthEndpoint(url string, timeout time.Duration) error {
+	client := &http.Client{Timeout: time.Second}
+	deadline := time.Now().Add(timeout)
+	start := time.Now()
+
+	for time.Now().Before(deadline) {
+		resp, err := client.Get(url)
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				log.Printf("Health endpoint %s responded OK after %v", url, time.Since(start))
+				return nil
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	return fmt.Errorf("health endpoint %s did not respond within %v", url, timeout)
 }

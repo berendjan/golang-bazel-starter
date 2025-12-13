@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -22,8 +21,6 @@ type ServerBase struct {
 	shutdownCtx context.Context
 	cancel      context.CancelFunc
 	wg          sync.WaitGroup
-	ready       chan struct{}
-	readyOnce   sync.Once
 }
 
 func NewServerBase() *ServerBase {
@@ -31,24 +28,6 @@ func NewServerBase() *ServerBase {
 	return &ServerBase{
 		shutdownCtx: ctx,
 		cancel:      cancel,
-		ready:       make(chan struct{}),
-	}
-}
-
-// markReady signals that the server is ready to accept connections
-func (s *ServerBase) markReady() {
-	s.readyOnce.Do(func() {
-		close(s.ready)
-	})
-}
-
-// WaitUntilReady blocks until the server is ready or the timeout expires
-func (s *ServerBase) WaitUntilReady(timeout time.Duration) error {
-	select {
-	case <-s.ready:
-		return nil
-	case <-time.After(timeout):
-		return fmt.Errorf("server did not start within %v", timeout)
 	}
 }
 
@@ -87,39 +66,17 @@ func (s *ServerBase) runServer(sb *ServerBuilder) error {
 	// Setup graceful shutdown
 	s.setupGracefulShutdown()
 
-	// Channel to track when all servers have started listening
-	serversReady := make(chan struct{})
-	totalServers := len(sb.grpcServers) + len(sb.httpServers)
-	startedCount := 0
-	var startedMu sync.Mutex
-
-	serverStarted := func() {
-		startedMu.Lock()
-		defer startedMu.Unlock()
-		startedCount++
-		if startedCount == totalServers {
-			close(serversReady)
-		}
-	}
-
 	// Start all gRPC servers
 	for grpcPort, grpcServer := range sb.grpcServers {
 		s.wg.Add(1)
-		go s.startGRPCServer(grpcPort, grpcServer, serverStarted)
+		go s.startGRPCServer(grpcPort, grpcServer)
 	}
 
 	// Start all HTTP servers
 	for httpPort, httpMux := range sb.httpServers {
 		s.wg.Add(1)
-		go s.startHTTPServer(httpPort, httpMux, serverStarted)
+		go s.startHTTPServer(httpPort, httpMux)
 	}
-
-	// Wait for all servers to start listening, then mark as ready
-	go func() {
-		<-serversReady
-		s.markReady()
-		log.Println("All servers are ready to accept connections")
-	}()
 
 	// Wait for all servers to complete
 	s.wg.Wait()
@@ -127,16 +84,13 @@ func (s *ServerBase) runServer(sb *ServerBuilder) error {
 }
 
 // startGRPCServer starts a single gRPC server instance
-func (s *ServerBase) startGRPCServer(grpcPort int, grpcServer *grpc.Server, onReady func()) {
+func (s *ServerBase) startGRPCServer(grpcPort int, grpcServer *grpc.Server) {
 	defer s.wg.Done()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
 		log.Fatalf("Failed to listen on gRPC port %d: %v", grpcPort, err)
 	}
-
-	// Notify that this server is ready
-	onReady()
 
 	// Setup shutdown listener
 	go func() {
@@ -151,7 +105,7 @@ func (s *ServerBase) startGRPCServer(grpcPort int, grpcServer *grpc.Server, onRe
 }
 
 // startHTTPServer starts a single HTTP gateway server instance
-func (s *ServerBase) startHTTPServer(httpPort int, httpMux *runtime.ServeMux, onReady func()) {
+func (s *ServerBase) startHTTPServer(httpPort int, httpMux *runtime.ServeMux) {
 	defer s.wg.Done()
 
 	httpServer := &http.Server{
@@ -159,14 +113,12 @@ func (s *ServerBase) startHTTPServer(httpPort int, httpMux *runtime.ServeMux, on
 		Handler: httpMux,
 	}
 
-	// Create listener first to ensure port is bound before marking ready
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", httpPort))
 	if err != nil {
 		log.Fatalf("Failed to listen on HTTP port %d: %v", httpPort, err)
 	}
 
-	// Notify that this server is ready
-	onReady()
+	log.Printf("HTTP server listening on port %d", httpPort)
 
 	// Setup shutdown listener
 	go func() {
