@@ -59,8 +59,8 @@ export function Dashboard() {
 
   if (authLoading) {
     return (
-      <div style={styles.container}>
-        <p>Loading...</p>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
       </div>
     );
   }
@@ -68,39 +68,51 @@ export function Dashboard() {
   const email = identity?.traits?.email as string | undefined;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <div style={styles.headerContent}>
-          <h1 style={styles.title}>Dashboard</h1>
-          <div style={styles.userInfo}>
-            {email && <span style={styles.email}>{email}</span>}
-            <Link to="/auth/settings" style={styles.settingsLink}>
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-white border-b border-gray-200 px-8 py-4">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          <div className="flex items-center gap-4">
+            {email && <span className="text-gray-600">{email}</span>}
+            <Link
+              to="/auth/settings"
+              className="text-blue-600 hover:text-blue-800 hover:underline"
+            >
               Settings
             </Link>
-            <button onClick={logout} style={styles.logoutButton}>
+            <button
+              onClick={logout}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            >
               Sign Out
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div style={styles.content}>
-        {error && <div style={styles.error}>{error}</div>}
+      <main className="max-w-6xl mx-auto p-8">
+        {error && (
+          <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6 border border-red-200">
+            {error}
+          </div>
+        )}
 
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Create Account</h2>
-          <form onSubmit={handleCreateAccount} style={styles.form}>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Create Account
+          </h2>
+          <form onSubmit={handleCreateAccount} className="flex gap-4">
             <input
               type="text"
               value={newAccountName}
               onChange={(e) => setNewAccountName(e.target.value)}
               placeholder="Account name"
-              style={styles.input}
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={creating}
             />
             <button
               type="submit"
-              style={styles.createButton}
+              className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={creating || !newAccountName.trim()}
             >
               {creating ? 'Creating...' : 'Create'}
@@ -108,156 +120,56 @@ export function Dashboard() {
           </form>
         </div>
 
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Accounts</h2>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Accounts</h2>
           {loading ? (
-            <p>Loading accounts...</p>
+            <p className="text-gray-600">Loading accounts...</p>
           ) : accounts.length === 0 ? (
-            <p style={styles.emptyState}>No accounts yet. Create one above!</p>
+            <p className="text-gray-500 italic">
+              No accounts yet. Create one above!
+            </p>
           ) : (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Account ID</th>
-                  <th style={styles.th}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accounts.map((account) => (
-                  <tr key={account.account_id.id} style={styles.tr}>
-                    <td style={styles.td}>
-                      <code>{account.account_id.id}</code>
-                    </td>
-                    <td style={styles.td}>
-                      <button
-                        onClick={() => handleDeleteAccount(account.account_id.id)}
-                        style={styles.deleteButton}
-                      >
-                        Delete
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="text-left py-3 px-4 text-gray-600 font-medium">
+                      Account ID
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-600 font-medium">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {accounts.map((account) => (
+                    <tr
+                      key={account.account_id.id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="py-3 px-4">
+                        <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                          {account.account_id.id}
+                        </code>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() =>
+                            handleDeleteAccount(account.account_id.id)
+                          }
+                          className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: 'white',
-    borderBottom: '1px solid #ddd',
-    padding: '1rem 2rem',
-  },
-  headerContent: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: {
-    margin: 0,
-    color: '#333',
-  },
-  userInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-  },
-  email: {
-    color: '#666',
-  },
-  settingsLink: {
-    color: '#007bff',
-    textDecoration: 'none',
-  },
-  logoutButton: {
-    padding: '0.5rem 1rem',
-    backgroundColor: '#dc3545',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  },
-  content: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '2rem',
-  },
-  error: {
-    backgroundColor: '#fee',
-    color: '#c00',
-    padding: '1rem',
-    borderRadius: '4px',
-    marginBottom: '1rem',
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-    padding: '1.5rem',
-    marginBottom: '1.5rem',
-  },
-  cardTitle: {
-    margin: '0 0 1rem 0',
-    color: '#333',
-  },
-  form: {
-    display: 'flex',
-    gap: '1rem',
-  },
-  input: {
-    flex: 1,
-    padding: '0.75rem',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '1rem',
-  },
-  createButton: {
-    padding: '0.75rem 1.5rem',
-    backgroundColor: '#28a745',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-  },
-  th: {
-    textAlign: 'left',
-    padding: '0.75rem',
-    borderBottom: '2px solid #ddd',
-    color: '#666',
-  },
-  tr: {
-    borderBottom: '1px solid #eee',
-  },
-  td: {
-    padding: '0.75rem',
-  },
-  deleteButton: {
-    padding: '0.25rem 0.75rem',
-    backgroundColor: '#dc3545',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '0.875rem',
-    cursor: 'pointer',
-  },
-  emptyState: {
-    color: '#666',
-    fontStyle: 'italic',
-  },
-};
