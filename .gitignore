@@ -1,3 +1,6 @@
 bazel-*
 
 node_modules/
+
+# k3s cluster kubeconfig
+dev/kubeconfig/

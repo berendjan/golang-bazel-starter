@@ -15,11 +15,13 @@ spec:
           containerPort: 25000
         - name: http-port
           containerPort: 26000
+        - name: health-port
+          containerPort: 27000
         startupProbe:
           httpGet:
             path: /health
-            port: http-port
-            scheme: HTTPS
+            port: health-port
+            scheme: HTTP
           failureThreshold: 120
           periodSeconds: 1
           timeoutSeconds: 5

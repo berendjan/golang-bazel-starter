@@ -1,0 +1,44 @@
+# Kratos server TLS certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kratos-server-tls
+  namespace: app-namespace
+spec:
+  secretName: kratos-server-tls
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days before expiry
+  subject:
+    organizations:
+      - dev-cluster
+  commonName: kratos.app-namespace.svc.cluster.local
+  dnsNames:
+    - kratos
+    - kratos.app-namespace
+    - kratos.app-namespace.svc
+    - kratos.app-namespace.svc.cluster.local
+  usages:
+    - server auth
+  issuerRef:
+    name: auth-ca-issuer
+    kind: ClusterIssuer
+---
+# Kratos PostgreSQL client certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kratos-postgres-tls
+  namespace: app-namespace
+spec:
+  secretName: kratos-postgres-tls
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days before expiry
+  subject:
+    organizations:
+      - dev-cluster
+  commonName: kratos
+  usages:
+    - client auth
+  issuerRef:
+    name: postgres-ca-issuer
+    kind: ClusterIssuer

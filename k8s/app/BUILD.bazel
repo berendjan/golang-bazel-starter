@@ -26,23 +26,18 @@ TARGETS = [
         sync_group = "operators",
     ),
     target(
-        name = "nginx-ingress",
-        dir = "nginx-ingress",
-        sync_group = "operators",
-    ),
-    target(
         name = "certificates",
         dir = "common/certificates",
         sync_group = "infra",
     ),
     target(
-        name = "environment",
-        dir = "common/environment",
+        name = "traefik-middleware",
+        dir = "common/traefik-middleware",
         sync_group = "infra",
     ),
     target(
-        name = "registry",
-        dir = "registry",
+        name = "environment",
+        dir = "common/environment",
         sync_group = "infra",
     ),
     target(
@@ -56,15 +51,32 @@ TARGETS = [
         sync_group = "infra",
     ),
     target(
-        name = "dbmate",
+        name = "dbmate-config",
         dir = "dbmate",
+        substitutions = {"{{DATABASE}}": "config"},
         sync_group = "migrations",
+    ),
+    target(
+        name = "dbmate-auth",
+        dir = "dbmate",
+        substitutions = {"{{DATABASE}}": "auth"},
+        sync_group = "migrations",
+    ),
+    target(
+        name = "kratos",
+        dir = "kratos",
+        sync_group = "apps",
     ),
     target(
         name = "grpcserver",
         dir = "grpcserver",
         extra_files = EXTRA_FILES,
         substitutions = create_substitutions("grpcserver", "app-namespace"),
+        sync_group = "apps",
+    ),
+    target(
+        name = "frontend",
+        dir = "frontend",
         sync_group = "apps",
     ),
 ]

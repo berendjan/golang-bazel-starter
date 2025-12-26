@@ -3,6 +3,7 @@ package serverbase
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
 	"net"
@@ -23,6 +24,7 @@ type ServerBase struct {
 	cancel      context.CancelFunc
 	wg          sync.WaitGroup
 	tlsConfig   *tls.Config
+	healthPort  int // separate non-TLS health port (0 = disabled)
 }
 
 func NewServerBase() *ServerBase {
@@ -46,6 +48,40 @@ func (s *ServerBase) WithTLS(certFile, keyFile string) *ServerBase {
 		MinVersion:   tls.VersionTLS12,
 	}
 	log.Printf("TLS enabled using certificate: %s", certFile)
+	return s
+}
+
+// WithClientCA adds client certificate verification (mTLS) using the specified CA file
+// Must be called after WithTLS
+func (s *ServerBase) WithClientCA(caFile string) *ServerBase {
+	if s.tlsConfig == nil {
+		log.Printf("mTLS disabled: WithTLS must be called before WithClientCA")
+		return s
+	}
+
+	caCert, err := os.ReadFile(caFile)
+	if err != nil {
+		log.Printf("mTLS disabled: failed to read CA file %s: %v", caFile, err)
+		return s
+	}
+
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(caCert) {
+		log.Printf("mTLS disabled: failed to parse CA certificate from %s", caFile)
+		return s
+	}
+
+	s.tlsConfig.ClientCAs = caCertPool
+	s.tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	log.Printf("mTLS enabled: requiring client certificates verified by %s", caFile)
+	return s
+}
+
+// WithHealthPort configures a separate non-TLS HTTP port for health checks
+// This is useful when mTLS is enabled but Kubernetes probes can't provide client certs
+func (s *ServerBase) WithHealthPort(port int) *ServerBase {
+	s.healthPort = port
+	log.Printf("Health port enabled on :%d (no TLS)", port)
 	return s
 }
 
@@ -83,6 +119,12 @@ func (s *ServerBase) runServer(sb *ServerBuilder) error {
 
 	// Setup graceful shutdown
 	s.setupGracefulShutdown()
+
+	// Start health server if configured (non-TLS)
+	if s.healthPort > 0 {
+		s.wg.Add(1)
+		go s.startHealthServer()
+	}
 
 	// Start all gRPC servers
 	log.Printf("Starting %d gRPC server(s) and %d HTTP server(s)...", len(sb.grpcServers), len(sb.httpServers))
@@ -164,6 +206,38 @@ func (s *ServerBase) startHTTPServer(httpPort int, httpMux *runtime.ServeMux) {
 
 	if err := httpServer.Serve(lis); err != nil && err != http.ErrServerClosed {
 		log.Printf("HTTP server on port %d stopped: %v", httpPort, err)
+	}
+}
+
+// startHealthServer starts a simple HTTP server for health checks (no TLS)
+func (s *ServerBase) startHealthServer() {
+	defer s.wg.Done()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", s.healthPort),
+		Handler: mux,
+	}
+
+	log.Printf("Health server listening on port %d (no TLS)", s.healthPort)
+
+	// Setup shutdown listener
+	go func() {
+		<-s.shutdownCtx.Done()
+		log.Printf("Shutting down health server on port %d", s.healthPort)
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Printf("Health server shutdown error: %v", err)
+		}
+	}()
+
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("Health server stopped: %v", err)
 	}
 }
 

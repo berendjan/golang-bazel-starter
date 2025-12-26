@@ -4,8 +4,8 @@ kind: Kustomization
 resources:
   - ../base
   - ingress.yaml
-  - certificate.yaml
 
-# Remove TLS configuration for dev (use HTTP)
-patches:
-  - path: disable-tls.yaml
+images:
+  - name: frontend
+    newName: registry.localhost:5001/frontend
+    newTag: latest

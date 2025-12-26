@@ -41,7 +41,7 @@ build_sha265_tag = rule(
     },
 )
 
-def image(name, srcs, base, entrypoint, exposed_ports = [], repositories = ["registry.localhost"], user = "65532"):
+def image(name, srcs, base, entrypoint, exposed_ports = [], repositories = ["registry.localhost:5001"], user = "65532"):
     """
     Builds and publishes an OCI image for a given binary.
 

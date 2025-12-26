@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: app-postgres
+  namespace: app-namespace
+spec:
+  # Single instance for dev
+  instances: 1
+  # Use k3s local-path storage
+  storage:
+    storageClass: local-path

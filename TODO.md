@@ -15,7 +15,7 @@
 - [ ] Adjust the code generation so it generates the messenger with only the specified handlers, should throw on illegal config
 
 ## Authentication
-- [ ] Add Ory Hydra for user authentication
+- [ ] Add Ory Kratos for user authentication
 - [ ] Users information should be added to postgresql itself
 
 ## Message Queue & Background Jobs

@@ -14,17 +14,12 @@ spec:
   # Bootstrap configuration
   bootstrap:
     initdb:
-      database: config
       postInitApplicationSQL:
         # Create dbmate role with CREATEROLE privilege
         - CREATE ROLE  "dbmate" WITH LOGIN CREATEROLE;
-        # Grant privileges to dbmate
-        - GRANT ALL PRIVILEGES ON DATABASE config TO "dbmate";
-        - GRANT ALL PRIVILEGES ON SCHEMA public TO "dbmate";
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "dbmate";
-        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "dbmate";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "dbmate";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "dbmate";
+        # Create databases
+        - CREATE DATABASE config OWNER "dbmate";
+        - CREATE DATABASE auth OWNER "dbmate";
 
   # PostgreSQL configuration
   postgresql:
@@ -35,6 +30,8 @@ spec:
       # Certificate-only authentication for application users
       - hostssl   config        dbmate          0.0.0.0/0 cert clientcert=verify-full
       - hostssl   config        grpcserver      0.0.0.0/0 cert clientcert=verify-full
+      - hostssl   auth          dbmate          0.0.0.0/0 cert clientcert=verify-full
+      - hostssl   auth          kratos          0.0.0.0/0 cert clientcert=verify-full
       # reject the rest
       - host      all           all             all            reject
 

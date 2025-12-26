@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: dbmate
+  name: "dbmate-{{DATABASE}}"
   namespace: app-namespace
 spec:
   # Keep completed jobs for debugging
@@ -19,14 +19,14 @@ spec:
         runAsNonRoot: true
         runAsUser: 65532
       containers:
-      - name: dbmate
-        image: dbmate
+      - name: "dbmate-{{DATABASE}}"
+        image: "dbmate-{{DATABASE}}"
         imagePullPolicy: IfNotPresent
         command: ["dbmate"]
         args: ["up"]
         env:
         - name: DATABASE_URL
-          value: "postgres://dbmate@app-postgres-rw.app-namespace.svc.cluster.local:5432/config?sslmode=verify-full&sslcert=/mnt/client-certs/tls.crt&sslkey=/mnt/client-certs/tls.key&sslrootcert=/mnt/postgres-ca/ca.crt"
+          value: "postgres://dbmate@app-postgres-rw.app-namespace.svc.cluster.local:5432/{{DATABASE}}?sslmode=verify-full&sslcert=/mnt/client-certs/tls.crt&sslkey=/mnt/client-certs/tls.key&sslrootcert=/mnt/postgres-ca/ca.crt"
         - name: DBMATE_MIGRATIONS_DIR
           value: "/migrations"
         volumeMounts:

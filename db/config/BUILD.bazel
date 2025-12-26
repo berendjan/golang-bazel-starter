@@ -9,7 +9,6 @@ filegroup(
 
 # Create dbmate image with config database migrations
 dbmate_image(
-    name = "dbmate",
+    name = "dbmate_config",
     migrations = [":migrations"],
-    repositories = ["registry.localhost"],
 )

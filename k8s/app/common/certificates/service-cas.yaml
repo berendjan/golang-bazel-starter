@@ -1,34 +1,6 @@
 # Per-service Certificate Authorities
 # Each service gets its own CA for mTLS
 
----
-# Registry CA
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: registry-ca
-  namespace: cert-manager
-spec:
-  isCA: true
-  commonName: registry-ca
-  secretName: registry-ca-secret
-  duration: 87600h # 10 years
-  privateKey:
-    algorithm: RSA
-    size: 4096
-  issuerRef:
-    name: selfsigned-issuer
-    kind: ClusterIssuer
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: registry-ca-issuer
-spec:
-  ca:
-    secretName: registry-ca-secret
-
----
 # gRPC Server CA
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -108,3 +80,30 @@ metadata:
 spec:
   ca:
     secretName: dbmate-ca-secret
+
+---
+# Auth CA (for Kratos server TLS)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: auth-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: auth-ca
+  secretName: auth-ca-secret
+  duration: 87600h # 10 years
+  privateKey:
+    algorithm: RSA
+    size: 4096
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: auth-ca-issuer
+spec:
+  ca:
+    secretName: auth-ca-secret

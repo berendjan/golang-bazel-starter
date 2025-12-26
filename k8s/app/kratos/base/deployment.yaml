@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kratos
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: kratos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kratos
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kratos
+    spec:
+      initContainers:
+        - name: migrate
+          image: oryd/kratos:v1.1.0
+          command: ["kratos", "migrate", "sql", "-e", "--yes"]
+          env:
+            - name: DSN
+              value: "postgres://kratos@app-postgres-rw:5432/auth?sslmode=verify-full&sslcert=/mnt/client-certs/tls.crt&sslkey=/mnt/client-certs/tls.key&sslrootcert=/mnt/postgres-ca/ca.crt"
+          volumeMounts:
+            - name: client-certs
+              mountPath: /mnt/client-certs
+              readOnly: true
+            - name: postgres-ca
+              mountPath: /mnt/postgres-ca
+              readOnly: true
+      containers:
+        - name: kratos
+          image: oryd/kratos:v1.1.0
+          command: ["kratos", "serve", "all"]
+          args: ["--config", "/etc/kratos/kratos.yaml"]
+          ports:
+            - name: public
+              containerPort: 4433
+            - name: admin
+              containerPort: 4434
+          env:
+            - name: KRATOS_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kratos-secrets
+                  key: cookie-secret
+          volumeMounts:
+            - name: config
+              mountPath: /etc/kratos/kratos.yaml
+              subPath: kratos.yaml
+              readOnly: true
+            - name: identity-schema
+              mountPath: /etc/kratos/identity.schema.json
+              subPath: identity.schema.json
+              readOnly: true
+            - name: client-certs
+              mountPath: /mnt/client-certs
+              readOnly: true
+            - name: postgres-ca
+              mountPath: /mnt/postgres-ca
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health/alive
+              port: admin
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: admin
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: kratos-config
+        - name: identity-schema
+          configMap:
+            name: kratos-identity-schema
+        - name: client-certs
+          secret:
+            secretName: kratos-postgres-tls
+        - name: postgres-ca
+          secret:
+            secretName: postgres-ca-bundle

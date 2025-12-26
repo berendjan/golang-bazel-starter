@@ -9,7 +9,7 @@ def dbmate_image(
         name,
         migrations,
         package_dir = "/migrations",
-        repositories = ["registry.localhost"],
+        repositories = ["registry.localhost:5001"],
         visibility = None):
     """Creates a dbmate image with migrations bundled.
 
@@ -23,10 +23,10 @@ def dbmate_image(
     - multirun target to push all tags
 
     Args:
-        name: Base name for the targets (e.g., "dbmate")
+        name: Base name for the targets (e.g., "dbmate-config")
         migrations: List of migration files or filegroup label
         package_dir: Directory in the image where migrations will be stored (default: "/migrations")
-        repositories: List of container registries to push to (default: ["registry.localhost"])
+        repositories: List of container registries to push to (default: ["registry.localhost:5001"])
         visibility: Visibility for the main targets
 
     Generated targets:
@@ -34,6 +34,8 @@ def dbmate_image(
         {name}_remote_tag: sha256 tag file
         {name}_push: multirun target to push to all repositories
     """
+
+    name_image = name.replace("_", "-")
 
     # Package migration files into a tar
     pkg_tar(
@@ -86,7 +88,7 @@ def dbmate_image(
             name = sha_target,
             image = ":{}_image".format(name),
             remote_tags = ":{}_remote_tag".format(name),
-            repository = "{}/{}".format(repo, name),
+            repository = "{}/{}".format(repo, name_image),
         )
         push_targets.append(":{}".format(sha_target))
 
@@ -96,7 +98,7 @@ def dbmate_image(
             name = latest_target,
             image = ":{}_image".format(name),
             remote_tags = ["latest"],
-            repository = "{}/{}".format(repo, name),
+            repository = "{}/{}".format(repo, name_image),
         )
         push_targets.append(":{}".format(latest_target))
 

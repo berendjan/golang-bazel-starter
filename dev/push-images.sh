@@ -3,7 +3,7 @@
 
 set -e  # Exit on error
 
-REGISTRY_URL="registry.localhost"
+REGISTRY_URL="registry.localhost:5001"
 
 echo "========================================="
 echo "Building and Pushing Images"
@@ -11,22 +11,15 @@ echo "Registry: ${REGISTRY_URL}"
 echo "========================================="
 echo ""
 
-# Check if /etc/hosts has registry.localhost entry
-if ! grep -q "registry.localhost" /etc/hosts; then
-    echo "Adding registry.localhost to /etc/hosts..."
-    echo "127.0.0.1 registry.localhost" | sudo tee -a /etc/hosts
-fi
-
 # Check if registry is accessible
 echo "Checking registry availability at ${REGISTRY_URL}..."
 if ! curl -s http://${REGISTRY_URL}/v2/ > /dev/null; then
     echo "ERROR: Registry not accessible at ${REGISTRY_URL}"
     echo ""
     echo "Troubleshooting steps:"
-    echo "  1. Check nginx-ingress is running: kubectl get pods -n ingress-nginx"
-    echo "  2. Check registry ingress: kubectl get ingress -n mgmt"
-    echo "  3. Verify /etc/hosts has: 127.0.0.1 registry.localhost"
-    echo "  4. Test manually: curl http://registry.localhost/v2/"
+    echo "  1. Check registry container is running: docker ps | grep registry-dev"
+    echo "  2. Verify /etc/hosts has: 127.0.0.1 registry.localhost"
+    echo "  3. Test manually: curl http://registry.localhost:5001/v2/"
     exit 1
 fi
 
@@ -36,7 +29,8 @@ echo ""
 # Build and push dbmate
 echo "Building and pushing dbmate..."
 echo "-----------------------------------"
-bazel run //db/config:dbmate_push
+bazel run //db/config:dbmate_config_push
+bazel run //db/auth:dbmate_auth_push
 
 echo ""
 
@@ -44,6 +38,13 @@ echo ""
 echo "Building and pushing grpcserver..."
 echo "-----------------------------------"
 bazel run //golang/grpcserver:grpcserver_push
+
+echo ""
+
+# Build and push frontend
+echo "Building and pushing frontend..."
+echo "-----------------------------------"
+bazel run //frontend:frontend_push
 
 echo ""
 echo "Verifying images in registry..."
@@ -76,6 +77,19 @@ if curl -s http://${REGISTRY_URL}/v2/_catalog | grep -q grpcserver; then
     curl -s http://${REGISTRY_URL}/v2/grpcserver/tags/list | jq '.'
 else
     echo "✗ grpcserver image not found in registry"
+    exit 1
+fi
+
+echo ""
+
+# Check frontend specifically
+if curl -s http://${REGISTRY_URL}/v2/_catalog | grep -q frontend; then
+    echo "✓ frontend image pushed successfully"
+    echo ""
+    echo "Tags for frontend:"
+    curl -s http://${REGISTRY_URL}/v2/frontend/tags/list | jq '.'
+else
+    echo "✗ frontend image not found in registry"
     exit 1
 fi
 

@@ -1,29 +1,34 @@
 #!/bin/bash
-# Script to delete the Kind cluster
+# Script to delete the k3s cluster
 
 set -e  # Exit on error
 
-CLUSTER_NAME="dev"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+KUBECONFIG_DIR="${SCRIPT_DIR}/kubeconfig"
 
 echo "========================================="
-echo "Deleting Kind Cluster"
+echo "Deleting k3s Cluster"
 echo "========================================="
 echo ""
 
-# Check if kind is installed
-if ! command -v kind &> /dev/null; then
-    echo "ERROR: kind is not installed"
+# Check if docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "ERROR: docker is not installed"
     exit 1
 fi
 
 # Check if cluster exists
-if ! kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
-    echo "Cluster '${CLUSTER_NAME}' does not exist"
+if ! docker ps -a --format '{{.Names}}' | grep -q "^k3s-dev$"; then
+    echo "Cluster 'k3s-dev' does not exist"
     exit 0
 fi
 
-# Delete cluster
-kind delete cluster --name "${CLUSTER_NAME}"
+# Stop and remove containers
+echo "Stopping containers..."
+docker compose -f "${SCRIPT_DIR}/docker-compose.yaml" down -v
+
+# Clean up kubeconfig
+rm -rf "${KUBECONFIG_DIR}"
 
 echo ""
 echo "✓ Cluster deleted successfully!"

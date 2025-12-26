@@ -7,6 +7,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // GRPCServiceRegistrar registers a gRPC service with a gRPC server
@@ -41,6 +42,20 @@ func NewServerBuilder() *ServerBuilder {
 	}
 }
 
+// newServeMux creates a new ServeMux with JSON marshaler configured to use proto field names (snake_case)
+func newServeMux() *runtime.ServeMux {
+	return runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				UseProtoNames: true, // Use snake_case field names from proto
+			},
+			UnmarshalOptions: protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			},
+		}),
+	)
+}
+
 // WithGRPCOptions sets gRPC server options for a specific port
 func (sb *ServerBuilder) WithGRPCOptions(grpcPort int, opts ...grpc.ServerOption) *ServerBuilder {
 	sb.grpcOpts[grpcPort] = append(sb.grpcOpts[grpcPort], opts...)
@@ -63,7 +78,7 @@ func (sb *ServerBuilder) RegisterService(grpcPort, httpPort int, service Service
 	// Get or create HTTP ServeMux for this port
 	httpMux, exists := sb.httpServers[httpPort]
 	if !exists {
-		httpMux = runtime.NewServeMux()
+		httpMux = newServeMux()
 		sb.httpServers[httpPort] = httpMux
 	}
 
@@ -98,7 +113,7 @@ func (sb *ServerBuilder) RegisterGateway(httpPort int, service HTTPGatewayRegist
 	// Get or create HTTP ServeMux for this port
 	httpMux, exists := sb.httpServers[httpPort]
 	if !exists {
-		httpMux = runtime.NewServeMux()
+		httpMux = newServeMux()
 		sb.httpServers[httpPort] = httpMux
 	}
 

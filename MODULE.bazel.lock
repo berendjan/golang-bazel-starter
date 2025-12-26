@@ -1208,7 +1208,7 @@
     "@@rules_oci+//oci:extensions.bzl%oci": {
       "general": {
         "bzlTransitiveDigest": "W+jv4tzaVecFN+5a/mOE6VBYMK33+XxG1UaeUOHxB3U=",
-        "usagesDigest": "b3XnaLWOTdljacrcMGkKfsYsmlmJORLuaCVLZaUsQxQ=",
+        "usagesDigest": "tUFMf99L+Gb9OJyfh4zxn2If/lTlr2d6Tnr3ghgMCYA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1330,6 +1330,46 @@
                 "@@platforms//cpu:arm64": "@distroless_base_linux_arm64"
               },
               "bzlmod_repository": "distroless_base",
+              "reproducible": true
+            }
+          },
+          "nginx_linux_amd64": {
+            "repoRuleId": "@@rules_oci+//oci/private:pull.bzl%oci_pull",
+            "attributes": {
+              "scheme": "https",
+              "registry": "index.docker.io",
+              "repository": "nginxinc/nginx-unprivileged",
+              "identifier": "sha256:74d864843f59c0492fa7ba0eb8ff9b2b6b4797b069e4bfee78df6739873eebd7",
+              "platform": "linux/amd64",
+              "target_name": "nginx_linux_amd64",
+              "bazel_tags": []
+            }
+          },
+          "nginx_linux_arm64": {
+            "repoRuleId": "@@rules_oci+//oci/private:pull.bzl%oci_pull",
+            "attributes": {
+              "scheme": "https",
+              "registry": "index.docker.io",
+              "repository": "nginxinc/nginx-unprivileged",
+              "identifier": "sha256:74d864843f59c0492fa7ba0eb8ff9b2b6b4797b069e4bfee78df6739873eebd7",
+              "platform": "linux/arm64",
+              "target_name": "nginx_linux_arm64",
+              "bazel_tags": []
+            }
+          },
+          "nginx": {
+            "repoRuleId": "@@rules_oci+//oci/private:pull.bzl%oci_alias",
+            "attributes": {
+              "target_name": "nginx",
+              "scheme": "https",
+              "registry": "index.docker.io",
+              "repository": "nginxinc/nginx-unprivileged",
+              "identifier": "sha256:74d864843f59c0492fa7ba0eb8ff9b2b6b4797b069e4bfee78df6739873eebd7",
+              "platforms": {
+                "@@platforms//cpu:x86_64": "@nginx_linux_amd64",
+                "@@platforms//cpu:arm64": "@nginx_linux_arm64"
+              },
+              "bzlmod_repository": "nginx",
               "reproducible": true
             }
           },
@@ -1720,7 +1760,10 @@
             "distroless_linux_arm64_v8",
             "distroless_base",
             "distroless_base_linux_amd64",
-            "distroless_base_linux_arm64"
+            "distroless_base_linux_arm64",
+            "nginx",
+            "nginx_linux_amd64",
+            "nginx_linux_arm64"
           ],
           "explicitRootModuleDirectDevDeps": [],
           "useAllRepos": "NO",

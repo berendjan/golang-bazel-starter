@@ -1,12 +1,12 @@
 #!/bin/bash
-# Script to tear down and recreate the Kind cluster from scratch
+# Script to tear down and recreate the k3s cluster from scratch
 
 set -e  # Exit on error
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "========================================="
-echo "Kind Cluster Reset Script"
+echo "k3s Cluster Reset Script"
 echo "========================================="
 echo ""
 

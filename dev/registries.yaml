@@ -1,0 +1,7 @@
+# k3s registry configuration
+# Maps registry.localhost:5001 to the docker-compose registry service
+# Note: registry-dev:5000 is the internal Docker network address (host maps 5001:5000)
+mirrors:
+  "registry.localhost:5001":
+    endpoint:
+      - "http://registry-dev:5000"

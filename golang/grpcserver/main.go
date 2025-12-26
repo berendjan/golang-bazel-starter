@@ -9,6 +9,7 @@ import (
 	"github.com/berendjan/golang-bazel-starter/golang/framework/db"
 	"github.com/berendjan/golang-bazel-starter/golang/framework/serverbase"
 	"github.com/berendjan/golang-bazel-starter/golang/grpcserver/messenger"
+	"github.com/berendjan/golang-bazel-starter/golang/middleware/auth"
 	"github.com/berendjan/golang-bazel-starter/golang/middleware/middleone"
 	"github.com/berendjan/golang-bazel-starter/golang/middleware/middletwo"
 )
@@ -50,8 +51,11 @@ func createMessenger() *messenger.GrpcMessenger {
 	// Create repository
 	accountRepo := repository.NewAccountRepository(pool)
 
-	// Create middleware
-	middlewareOne := &middleone.MiddleOne{}
+	// Create auth middleware (Kratos public API)
+	authMiddleware := auth.NewAuthMiddleware("http://kratos.app-namespace.svc.cluster.local:4433")
+
+	// Create middleware chain
+	middlewareOne := middleone.NewMiddleOne(authMiddleware)
 	middlewareTwo := &middletwo.MiddleTwo{}
 
 	// Create messenger with all dependencies
@@ -67,9 +71,14 @@ func main() {
 	// TLS certificate and key files
 	certFile := "/mnt/server-certs/tls.crt"
 	keyFile := "/mnt/server-certs/tls.key"
+	caFile := "/mnt/server-certs/ca.crt"
 
-	// Create and launch gRPC server
-	grpcServer := NewGrpcServer(createMessenger()).WithTLS(certFile, keyFile)
+	// Create and launch gRPC server with mTLS
+	// Health port 27000 is non-TLS for Kubernetes probes
+	grpcServer := NewGrpcServer(createMessenger()).
+		WithTLS(certFile, keyFile).
+		WithClientCA(caFile).
+		WithHealthPort(27000)
 	log.Println("Starting gRPC server with messenger")
 
 	// Launch server

@@ -14,6 +14,23 @@ spec:
       matchLabels:
         kubernetes.io/metadata.name: app-namespace
 ---
+# Traefik-compatible bundle with tls.ca key
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: grpcserver-traefik-ca-bundle
+spec:
+  sources:
+    - secret:
+        name: grpcserver-ca-secret
+        key: ca.crt
+  target:
+    secret:
+      key: tls.ca
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: app-namespace
+---
 apiVersion: trust.cert-manager.io/v1alpha1
 kind: Bundle
 metadata:
@@ -22,6 +39,22 @@ spec:
   sources:
     - secret:
         name: postgres-ca-secret
+        key: ca.crt
+  target:
+    secret:
+      key: ca.crt
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: app-namespace
+---
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: auth-ca-bundle
+spec:
+  sources:
+    - secret:
+        name: auth-ca-secret
         key: ca.crt
   target:
     secret:

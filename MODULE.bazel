@@ -13,7 +13,7 @@ go_sdk.download(version = "1.25.4")
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
-use_repo(go_deps, "com_github_docker_docker", "com_github_golang_migrate_migrate_v4", "com_github_google_uuid", "com_github_jackc_pgx_v5", "com_github_testcontainers_testcontainers_go", "in_gopkg_yaml_v3", "org_golang_google_grpc")
+use_repo(go_deps, "com_github_docker_docker", "com_github_google_uuid", "com_github_jackc_pgx_v5", "com_github_testcontainers_testcontainers_go", "in_gopkg_yaml_v3", "org_golang_google_grpc", "org_golang_google_protobuf")
 
 # k8s
 bazel_dep(name = "rules_kustomize", version = "0.5.1")
@@ -29,6 +29,7 @@ helm.download(version = "v3.19.0")
 # containers
 bazel_dep(name = "rules_oci", version = "2.2.1")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
+
 bazel_dep(name = "rules_multirun", version = "0.12.0", dev_dependency = True)
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
@@ -63,6 +64,17 @@ oci.pull(
         "linux/arm64",
     ],
 )
+
+# nginx unprivileged for serving static content
+oci.pull(
+    name = "nginx",
+    digest = "sha256:74d864843f59c0492fa7ba0eb8ff9b2b6b4797b069e4bfee78df6739873eebd7",
+    image = "docker.io/nginxinc/nginx-unprivileged",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64",
+    ],
+)
 use_repo(
     oci,
     "dbmate",
@@ -74,6 +86,9 @@ use_repo(
     "distroless_base_linux_arm64",
     "distroless_linux_amd64",
     "distroless_linux_arm64_v8",
+    "nginx",
+    "nginx_linux_amd64",
+    "nginx_linux_arm64",
 )
 
 # Frontend

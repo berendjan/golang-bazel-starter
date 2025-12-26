@@ -24,9 +24,11 @@ ts_project(
     tsconfig = "//frontend/react:tsconfig",
     visibility = ["//frontend/react:__subpackages__"],
     deps = [
+        "//frontend/react:node_modules/@ory/client",
         "//frontend/react:node_modules/@types/react",
         "//frontend/react:node_modules/react",
         "//frontend/react:node_modules/react-dom",
+        "//frontend/react:node_modules/react-router-dom",
         "//frontend/react:node_modules/vite-plugin-svgr",
         "//frontend/react:node_modules/web-vitals",
     ],

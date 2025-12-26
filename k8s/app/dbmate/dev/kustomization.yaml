@@ -8,4 +8,4 @@ patches:
   - path: job.yaml
     target:
       kind: Job
-      name: dbmate
+      name: "dbmate-{{DATABASE}}"

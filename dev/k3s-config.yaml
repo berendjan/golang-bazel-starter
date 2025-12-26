@@ -1,0 +1,5 @@
+# k3s server configuration
+tls-san:
+  - host.docker.internal
+  - localhost
+  - 127.0.0.1

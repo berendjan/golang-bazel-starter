@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kratos-config
+  namespace: app-namespace
+data:
+  kratos.yaml: |
+    version: v1.0.0
+
+    dsn: postgres://kratos@app-postgres-rw:5432/auth?sslmode=verify-full&sslcert=/mnt/client-certs/tls.crt&sslkey=/mnt/client-certs/tls.key&sslrootcert=/mnt/postgres-ca/ca.crt
+
+    serve:
+      public:
+        base_url: https://frontend.localhost/kratos/
+      admin:
+        base_url: http://kratos:4434/
+
+    selfservice:
+      default_browser_return_url: https://frontend.localhost/
+
+      flows:
+        registration:
+          ui_url: https://frontend.localhost/auth/register
+          after:
+            password:
+              hooks:
+                - hook: session
+        login:
+          ui_url: https://frontend.localhost/auth/login
+        logout:
+          after:
+            default_browser_return_url: https://frontend.localhost/
+        verification:
+          enabled: false
+          ui_url: https://frontend.localhost/auth/verify
+        recovery:
+          enabled: false
+          ui_url: https://frontend.localhost/auth/recovery
+        settings:
+          ui_url: https://frontend.localhost/auth/settings
+
+      methods:
+        password:
+          enabled: true
+          config:
+            haveibeenpwned_enabled: false
+            min_password_length: 8
+
+    identity:
+      default_schema_id: default
+      schemas:
+        - id: default
+          url: file:///etc/kratos/identity.schema.json
+
+    session:
+      lifespan: 24h
+      cookie:
+        same_site: Lax
+        domain: .localhost
+
+    hashers:
+      argon2:
+        parallelism: 1
+        memory: 128MB
+        iterations: 2
+        salt_length: 16
+        key_length: 16
+
+    secrets:
+      cookie:
+        - ${KRATOS_COOKIE_SECRET}
+
+    courier:
+      smtp:
+        connection_uri: smtp://mailpit:1025/?disable_starttls=true
+        from_address: noreply@localhost
+        from_name: Auth System
+
+    log:
+      level: info
+      format: json

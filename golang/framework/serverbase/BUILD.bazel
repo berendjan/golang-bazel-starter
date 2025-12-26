@@ -13,5 +13,6 @@ go_library(
         "@grpc_ecosystem_grpc_gateway//runtime",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//reflection",
+        "@org_golang_google_protobuf//encoding/protojson",
     ],
 )

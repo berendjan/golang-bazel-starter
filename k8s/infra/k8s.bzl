@@ -64,7 +64,7 @@ CLUSTERS = [
         environment = "dev",
         path = "",
         url = "",
-        context = "kind-dev",
+        context = "default",
     ),
     cluster(
         name = "prod-eu-west-1",

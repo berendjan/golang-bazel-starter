@@ -3,9 +3,10 @@ kind: Kustomization
 
 resources:
   - ../base
+  - ingress.yaml
 
 # Rewrite image references to use in-cluster registry
 images:
   - name: "{{name}}"
-    newName: "registry.localhost/grpcserver"
+    newName: "registry.localhost:5001/grpcserver"
     newTag: latest

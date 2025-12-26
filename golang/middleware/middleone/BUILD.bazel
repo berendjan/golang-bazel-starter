@@ -7,6 +7,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//golang/generated/interfaces",
+        "//golang/middleware/auth",
         "//proto/configuration/v1:configuration",
     ],
 )

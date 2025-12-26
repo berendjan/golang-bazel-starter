@@ -6,4 +6,5 @@ patches:
 
 resources:
   - certificate.yaml
+  - service.yaml
   - ../../common/deployment

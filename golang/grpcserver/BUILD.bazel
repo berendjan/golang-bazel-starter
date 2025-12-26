@@ -18,6 +18,7 @@ go_library(
         "//golang/framework/db",
         "//golang/framework/serverbase",
         "//golang/grpcserver/messenger",
+        "//golang/middleware/auth",
         "//golang/middleware/middleone",
         "//golang/middleware/middletwo",
     ],

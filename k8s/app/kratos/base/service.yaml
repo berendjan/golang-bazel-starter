@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kratos
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: kratos
+spec:
+  type: ClusterIP
+  ports:
+    - name: public
+      port: 4433
+      targetPort: public
+      protocol: TCP
+    - name: admin
+      port: 4434
+      targetPort: admin
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: kratos
