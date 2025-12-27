@@ -340,8 +340,8 @@ func createDatabase(ctx context.Context, testID string, config DatabaseConfig, h
 // createServer creates a test server instance
 func createServer(_ context.Context, config ServerConfig, dependencyProvider *TestContextProvider) (*TestServerContext, error) {
 
-	// Generate random ports in range 30000-40000
-	grpcPort := 30000 + rand.Intn(10000)
+	// Generate random ports in range 40000-50000
+	grpcPort := 40000 + rand.Intn(10000)
 	httpPort := grpcPort + 1
 
 	server := config.provider(dependencyProvider)

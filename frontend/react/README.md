@@ -1,6 +1,14 @@
 # React Frontend
 
-React + TypeScript application built with Vite and Bazel.
+React + TypeScript application built with Vite, Tailwind CSS, and Bazel.
+
+## Features
+
+- **React 18** with TypeScript
+- **Tailwind CSS v4** with native Vite plugin
+- **Vite** for fast dev server and bundler
+- **Ory Kratos** integration for authentication (login, register, settings)
+- **Bazel** for reproducible builds
 
 ## Quick Start
 
@@ -66,11 +74,15 @@ fetch('/api/users')
 ```
 frontend/react/
 ├── src/
+│   ├── pages/           # Page components (Login, Register, Dashboard, Settings)
+│   ├── lib/             # Kratos client and utilities
 │   ├── App.tsx          # Main app component
+│   ├── Router.tsx       # React Router configuration
 │   ├── index.tsx        # Entry point
+│   ├── index.css        # Tailwind CSS imports
 │   └── BUILD.bazel      # Bazel build config
 ├── public/              # Static assets
-├── vite.config.js       # Vite configuration
+├── vite.config.mjs      # Vite configuration (ESM)
 ├── tsconfig.json        # TypeScript config
 └── BUILD.bazel          # Bazel targets
 ```

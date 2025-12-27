@@ -58,12 +58,26 @@ type DBPool struct {
 
 // ConnectionString builds a PostgreSQL connection string from the config
 func (c *Config) ConnectionString() string {
-	var connStr string
-
-	connStr = fmt.Sprintf(
-		"host=%s port=%d user=%s dbname=%s sslmode=%s sslcert=%s sslkey=%s sslrootcert=%s",
-		c.Host, c.Port, c.User, c.Database, c.SSLMode, c.SSLCert, c.SSLKey, c.SSLRootCert,
+	connStr := fmt.Sprintf(
+		"host=%s port=%d user=%s dbname=%s sslmode=%s",
+		c.Host, c.Port, c.User, c.Database, c.SSLMode,
 	)
+
+	// Add password if provided (for non-certificate auth)
+	if c.Password != "" {
+		connStr += fmt.Sprintf(" password=%s", c.Password)
+	}
+
+	// Add SSL certificate paths if provided (for certificate auth)
+	if c.SSLCert != "" {
+		connStr += fmt.Sprintf(" sslcert=%s", c.SSLCert)
+	}
+	if c.SSLKey != "" {
+		connStr += fmt.Sprintf(" sslkey=%s", c.SSLKey)
+	}
+	if c.SSLRootCert != "" {
+		connStr += fmt.Sprintf(" sslrootcert=%s", c.SSLRootCert)
+	}
 
 	return connStr
 }

@@ -7,15 +7,17 @@
 - [ ] Document deploy.sh usage and quick iteration workflow
 
 ## Database & Server
-- [ ] Fix grpcserver PostgreSQL connection in Kind cluster
-- [ ] Configure grpcserver to use cert-manager SSL certificate for PostgreSQL authentication
-- [ ] Create PostgreSQL role/user for grpcserver that authenticates via SSL certificate
-- [ ] Create separate golang binary for database migrations (independent from grpcserver)
-- [ ] Remove migration logic from grpcserver and delegate to migration binary
+- [x] Fix grpcserver PostgreSQL connection in Kind cluster (mTLS working)
+- [x] Configure grpcserver to use cert-manager SSL certificate for PostgreSQL authentication
+- [x] Create PostgreSQL role/user for grpcserver that authenticates via SSL certificate
+- [x] Create separate golang binary for database migrations (dbmate)
+- [x] Remove migration logic from grpcserver and delegate to migration binary
 - [ ] Adjust the code generation so it generates the messenger with only the specified handlers, should throw on illegal config
 
 ## Authentication
-- [ ] Add Ory Kratos for user authentication
+- [x] Add Ory Kratos for user authentication
+- [x] Integrate Kratos with frontend (login, register, settings, logout flows)
+- [x] Add auth middleware to extract user ID from Kratos session cookie
 - [ ] Users information should be added to postgresql itself
 
 ## Message Queue & Background Jobs
@@ -30,11 +32,13 @@
 - [ ] Create Grafana dashboards for gRPC server, PostgreSQL, and infrastructure
 
 ## Frontend
-- [ ] Set up React frontend with Bazel (rules_js/aspect_rules_js)
-- [ ] Configure TypeScript for type safety
-- [ ] Create OCI image build for React frontend
-- [ ] Add Kubernetes deployment for frontend with nginx
-- [ ] Configure ingress for frontend routing
+- [x] Set up React frontend with Bazel (rules_js/aspect_rules_js)
+- [x] Configure TypeScript for type safety
+- [x] Create OCI image build for React frontend
+- [x] Add Kubernetes deployment for frontend with nginx
+- [x] Configure ingress for frontend routing
+- [x] Add Tailwind CSS v4 with native Vite plugin
+- [x] Configure frontend mTLS to grpcserver (nginx proxy with client certs)
 
 ## CI/CD
 - [ ] Set up GitHub Actions workflow for continuous integration

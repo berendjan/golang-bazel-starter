@@ -2,7 +2,7 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom/extend-expect';
 
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import App from './App';
 import { it, describe, expect } from 'vitest';
 
@@ -10,9 +10,8 @@ import { it, describe, expect } from 'vitest';
 * @vitest-environment jsdom
 */
 describe('app', () => {
-  it('renders hello world', () => {
-    render(<App />);
-    const linkElement = screen.getByText(/learn react/i);
-    expect(linkElement).toBeInTheDocument();
+  it('renders without crashing', () => {
+    const { container } = render(<App />);
+    expect(container).toBeInTheDocument();
   })
 });

@@ -29,6 +29,7 @@ ts_project(
         "//frontend/react:node_modules/react",
         "//frontend/react:node_modules/react-dom",
         "//frontend/react:node_modules/react-router-dom",
+        "//frontend/react:node_modules/vite",
         "//frontend/react:node_modules/vite-plugin-svgr",
         "//frontend/react:node_modules/web-vitals",
     ],

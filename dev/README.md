@@ -101,10 +101,11 @@ This script:
 1. Deploys namespaces (mgmt, app-namespace)
 2. Deploys operators (cnpg-operator, cert-manager, trust-manager, nginx-ingress)
 3. Deploys infrastructure (certificates, registry, otel-collector, postgres)
-4. Builds and pushes application images to registry
-5. Deploys applications (grpcserver)
-6. Waits for each layer to be ready before proceeding
-7. Shows deployed resources
+4. Deploys Ory Kratos for authentication
+5. Builds and pushes application images to registry (grpcserver, frontend, dbmate)
+6. Deploys applications (grpcserver, frontend)
+7. Waits for each layer to be ready before proceeding
+8. Shows deployed resources
 
 **Note**: Run this after `create-cluster.sh` or `reset-cluster.sh`.
 
@@ -219,6 +220,23 @@ kind load docker-image localhost:5001/grpcserver:latest --name dev
 ## Accessing Services
 
 Services running in the cluster can be accessed via:
+
+### Ingress (Recommended)
+
+The cluster includes nginx-ingress with TLS. Access services via hostname:
+
+```bash
+# Frontend (React app with Tailwind CSS)
+https://frontend.localhost
+
+# Kratos (authentication)
+https://kratos.localhost
+
+# API (via frontend proxy)
+https://frontend.localhost/api/v1/accounts
+```
+
+> **Note**: Add entries to `/etc/hosts` if needed, though `.localhost` domains typically resolve automatically.
 
 ### NodePort Services
 

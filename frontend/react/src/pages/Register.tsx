@@ -1,6 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { RegistrationFlow, UiNode, UiNodeInputAttributes } from '@ory/client';
+import { RegistrationFlow, UiNode, UiNodeInputAttributes, UpdateRegistrationFlowBody } from '@ory/client';
 import { kratos, getErrorMessages } from '../lib/kratos';
 import { useAuth } from '../context/AuthContext';
 
@@ -67,7 +67,7 @@ export function Register() {
         updateRegistrationFlowBody: {
           method: 'password',
           ...body,
-        },
+        } as UpdateRegistrationFlowBody,
       });
       // Registration successful (session created via hook), refresh and redirect
       await refreshSession();

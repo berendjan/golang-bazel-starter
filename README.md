@@ -545,7 +545,16 @@ MIT License - see LICENSE file for details
 
 ## Frontend Development
 
-The project includes a React frontend built with Vite and managed through Bazel.
+The project includes a React frontend built with Vite, Tailwind CSS v4, and managed through Bazel.
+
+### Features
+
+- **React 18** with TypeScript
+- **Tailwind CSS v4** with native Vite plugin (no PostCSS needed)
+- **Ory Kratos** integration for authentication
+- **Vite** for fast dev server and bundler
+- **ESLint** with TypeScript support
+- **Vitest** for unit testing
 
 ### Project Structure
 
@@ -558,10 +567,12 @@ golang-bazel-starter/
 ├── frontend/
 │   ├── react/              # React application
 │   │   ├── src/            # Source files (.tsx, .ts)
+│   │   │   ├── pages/      # Page components (Login, Register, Dashboard)
+│   │   │   └── lib/        # Kratos client and utilities
 │   │   ├── public/         # Static assets
 │   │   ├── package.json    # React app dependencies
 │   │   ├── tsconfig.json   # TypeScript config
-│   │   ├── vite.config.js  # Vite configuration
+│   │   ├── vite.config.mjs # Vite configuration (ESM for Tailwind plugin)
 │   │   └── BUILD.bazel     # Bazel build rules
 │   └── tools/
 │       ├── lint/           # ESLint Bazel configuration

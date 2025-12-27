@@ -1,6 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { LoginFlow, UiNode, UiNodeInputAttributes } from '@ory/client';
+import { LoginFlow, UiNode, UiNodeInputAttributes, UpdateLoginFlowBody } from '@ory/client';
 import { kratos, getErrorMessages } from '../lib/kratos';
 import { useAuth } from '../context/AuthContext';
 
@@ -67,7 +67,7 @@ export function Login() {
         updateLoginFlowBody: {
           method: 'password',
           ...body,
-        },
+        } as UpdateLoginFlowBody,
       });
       // Login successful, refresh session and redirect
       await refreshSession();

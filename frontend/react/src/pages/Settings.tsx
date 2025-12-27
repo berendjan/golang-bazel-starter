@@ -1,6 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { SettingsFlow, UiNode, UiNodeInputAttributes } from '@ory/client';
+import { SettingsFlow, UiNode, UiNodeInputAttributes, UpdateSettingsFlowBody } from '@ory/client';
 import { kratos, getErrorMessages } from '../lib/kratos';
 import { useAuth } from '../context/AuthContext';
 
@@ -66,7 +66,7 @@ export function Settings() {
         updateSettingsFlowBody: {
           method,
           ...body,
-        },
+        } as UpdateSettingsFlowBody,
       });
       setFlow(data);
       setSuccess('Settings updated successfully!');
